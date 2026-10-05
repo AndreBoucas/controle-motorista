@@ -65,6 +65,7 @@ header{background:var(--hd);color:#fff;padding:14px 16px 64px;border-radius:0 0 
 #ident{position:sticky;top:0;z-index:6;background:var(--hd2);color:#fff;font-size:12px;font-weight:600;padding:calc(7px + env(safe-area-inset-top,0px)) 14px 7px;display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center;cursor:pointer}
 #ident span{min-width:0}#ident #idp{flex:none;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:6px;letter-spacing:.5px}
 .tclk{font-size:40px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+.icg{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.icg button{height:46px;font-size:24px;border:0;border-radius:10px;background:var(--in);padding:0}.icg button:active{background:var(--hd)}.icgt{font-size:12px;color:var(--mut);margin:14px 0 6px;font-weight:700}
 .sync{text-align:center;font-size:12px;opacity:.85;margin-top:8px}
 .bk{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bk button{padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx);font-size:14px;font-weight:600}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));max-width:520px;margin:0 auto}
@@ -75,9 +76,9 @@ nav button.on span{background:rgba(0,168,143,.2)}
 nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;height:3px;border-radius:0 0 4px 4px;background:var(--hd)}
 .mtit{margin:0 14px 10px;padding:10px 14px;border-left:4px solid var(--hd);background:var(--card);border-radius:10px;font-size:16px;font-weight:800}
 #fab{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom,0px));right:16px;width:58px;height:58px;border-radius:50%;background:var(--hd);color:#fff;border:4px solid var(--bg);font-size:30px;line-height:1;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:5}
-#ov,#ov2,#ov3,#ov4{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10;align-items:flex-end;justify-content:center}
-#ov.on,#ov2.on,#ov3.on,#ov4.on{display:flex}
-#sh,#sh2,#sh3,#sh4{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
+#ov,#ov2,#ov3,#ov4,#ov5{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10;align-items:flex-end;justify-content:center}
+#ov.on,#ov2.on,#ov3.on,#ov4.on,#ov5.on{display:flex}
+#sh,#sh2,#sh3,#sh4,#sh5{background:var(--card);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tabs button{padding:11px;border:0;border-radius:10px;background:var(--in);color:var(--mut);font-weight:700;font-size:15px}
 .tabs button.on.r{background:var(--ok);color:#fff}.tabs button.on.d{background:var(--bad);color:#fff}
@@ -89,7 +90,7 @@ nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;h
 .f label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
 .f input{width:100%;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)}
 #sv,#ssv{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--hd);color:#fff;font-size:16px;font-weight:700}
-#cx,#scx,#zcx,#d4cx{width:100%;margin-top:6px;padding:12px;border:0;background:none;color:var(--mut);font-size:15px}
+#cx,#scx,#zcx,#d4cx,#ic5cx{width:100%;margin-top:6px;padding:12px;border:0;background:none;color:var(--mut);font-size:15px}
 </style>
 </head>
 <body>
@@ -179,7 +180,7 @@ nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;h
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 01/10/2026 · v13</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 05/10/2026 · v17</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -226,8 +227,9 @@ nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;h
     <input id="novaIn" maxlength="30" placeholder="Nome da nova categoria" style="width:100%;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)">
     <div id="icwrap" style="display:none">
       <label style="display:block;font-size:12px;color:var(--mut);margin-bottom:4px">Ícone da categoria</label>
-      <select id="icsel" class="fsel" style="width:100%"></select>
-      <input id="icown" maxlength="8" placeholder="Digite o emoji" style="display:none;width:100%;margin-top:8px;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)">
+      <button type="button" id="icbtn" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx);font-size:15px"><span id="icprev" style="font-size:26px">💼</span><span style="flex:1;text-align:left">Escolher ícone</span><span>▾</span></button>
+      <input type="hidden" id="icsel" value="💼">
+      <input id="icown" maxlength="8" placeholder="ou digite outro emoji" style="display:block;width:100%;margin-top:8px;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)">
     </div>
     <button id="novaOk" class="pb" style="margin-top:0">Adicionar</button>
   </div>
@@ -235,6 +237,7 @@ nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;h
     <div id="dtWrap"><label>Data</label><input type="date" id="data"></div>
     <div id="kmWrap"><label>Km rodados (opcional)</label><input type="number" inputmode="decimal" id="kmin" placeholder="0"></div>
     <div id="hWrap"><label>Horas trabalhadas (opcional)</label><input type="number" inputmode="decimal" id="hin" placeholder="0"></div>
+    <div id="hiWrap" style="grid-column:1/-1"><label>Horário de início do turno (opcional)</label><input type="time" id="hini"></div>
   </div>
   <div class="f" id="fuelWrap" style="display:none;margin-top:10px">
     <div><label>Litros abastecidos</label><input type="number" inputmode="decimal" step="0.01" id="flit" placeholder="0"></div>
@@ -279,11 +282,17 @@ nav button.on::before{content:"";position:absolute;top:-8px;left:18%;right:18%;h
   <button id="d4cx">Cancelar</button>
 </div></div>
 <div id="toast" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:40;max-width:90%;text-align:center"></div>
+<div id="ov5"><div id="sh5">
+  <b style="font-size:17px">Escolha um ícone</b>
+  <input id="icq" placeholder="Buscar (ex: mercado, carro, saúde)" autocomplete="off" style="width:100%;margin-top:10px;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)">
+  <div id="icgrid"></div>
+  <button id="ic5cx">Cancelar</button>
+</div></div>
 <div id="vw"><img id="vwi" alt="Foto da nota"></div>
 <script>
 var KEY="motorista_v1",dados=[],cur=new Date(),modo="r",cat="uber";
 var REC=[["uber","Uber","🟦"],["99","99","🟨"],["indrive","inDrive","🟩"],["particular","Particular","💵"]];
-var DES=[["Combustível","Combustível","⛽"],["Alimentação","Alimentação","🍔"],["Lavagem","Lavagem","🧽"]];
+var DES=[["Almoço","Almoço","🍽️"],["Lanche","Lanche","🥪"],["Abastecimento","Abastecimento","⛽"],["Supermercado","Supermercado","🛒"],["Lavagem de carro","Lavagem de carro","🧽"]];
 function $(i){return document.getElementById(i)}
 var idb=null,arqH=null,arqT=null,arqEst="",instEv=null;
 function idbOpen(){return new Promise(function(ok,no){
@@ -338,12 +347,35 @@ function migrar(){
   var ch=false,ms=[];
   customRec=customRec.filter(function(n){if(String(n).toLowerCase()==="indrive"){ch=true;return false}return true});
   dados.forEach(function(e){if(typeof e.tipo==="string"&&e.tipo!=="indrive"&&e.tipo.toLowerCase()==="indrive"){e.tipo="indrive";ms.push(e.data.slice(0,7));ch=true}});
+  dados.forEach(function(e){if(e.tipo==="Combustível"){e.tipo="Abastecimento";ms.push(e.data.slice(0,7));ch=true}else if(e.tipo==="Lavagem"){e.tipo="Lavagem de carro";ms.push(e.data.slice(0,7));ch=true}});
+  DES.forEach(function(d){var b=d[0];
+    custom=custom.filter(function(n){if(String(n).toLowerCase()===b.toLowerCase()){ch=true;return false}return true});
+    dados.forEach(function(e){if(typeof e.tipo==="string"&&e.tipo!==b&&e.tipo.toLowerCase()===b.toLowerCase()){e.tipo=b;ms.push(e.data.slice(0,7));ch=true}});
+  });
   if(perfil.odo>0&&!perfil.odoTs){perfil.odoTs=Date.now();ch=true}
   if(ch){cache();saveCats();gravaMeses(Array.from(new Set(ms)))}
 }
 var ICONS=[["💼","Trabalho"],["🚕","Corrida"],["🚗","Carro"],["🛵","Moto"],["📱","Aplicativo/Celular"],["💵","Dinheiro"],["💰","Bônus"],["🎁","Gorjeta"],["🚚","Frete"],["📦","Encomenda"],["🤝","Parceria"],["🧑‍💼","Cliente fixo"],["⛽","Combustível"],["🍔","Alimentação"],["🔧","Manutenção"],["🧽","Lavagem"],["🛣️","Pedágio"],["🅿️","Estacionamento"],["🛡️","Seguro"],["📄","Documentos/Impostos"],["🏦","Parcela/Financiamento"],["🧾","Conta"],["🏷️","Etiqueta"],["⭐","Outro"]];
+var ICONBANK=[
+{g:"Alimentação",l:[["🍽️","almoço jantar refeição prato"],["🥪","lanche sanduíche"],["🍔","hambúrguer fast food"],["🍕","pizza"],["🌭","cachorro quente"],["🥗","salada"],["🍝","massa macarrão"],["🍗","frango"],["🥩","carne açougue"],["🐟","peixe"],["🍞","padaria pão"],["🥐","padaria café da manhã"],["🍰","doce sobremesa bolo"],["🍦","sorvete"],["☕","café"],["🥤","bebida refrigerante suco"],["🍺","cerveja bar"],["🍷","vinho"],["🛒","supermercado mercado compras"],["🍎","fruta hortifruti"],["🥕","verdura legume"],["🧃","suco"],["🍫","chocolate doce"],["🍿","pipoca"]]},
+{g:"Transporte",l:[["⛽","abastecimento combustível posto gasolina"],["🚗","carro"],["🚕","táxi corrida"],["🚙","carro suv"],["🛵","moto"],["🏍️","moto"],["🚌","ônibus"],["🚆","trem metrô"],["🚲","bicicleta"],["🛣️","pedágio estrada"],["🅿️","estacionamento"],["🔧","manutenção oficina"],["🛞","pneu"],["🧽","lavagem de carro lava rápido"],["🔋","bateria"],["🛢️","óleo"],["🚚","frete caminhão"],["📦","encomenda entrega"],["✈️","viagem avião"],["⛴️","balsa barco"],["🚨","multa"],["🧰","ferramentas"]]},
+{g:"Casa e contas",l:[["🏠","casa aluguel"],["💡","luz energia"],["🚿","água"],["🔥","gás"],["📱","celular"],["📶","internet wifi"],["📺","tv streaming assinatura"],["🧾","conta boleto"],["📄","documentos impostos ipva"],["🛡️","seguro"],["🏦","banco parcela financiamento"],["💳","cartão"],["🧹","limpeza"],["🛋️","móveis"],["🔨","reforma"],["🔑","chave imóvel"]]},
+{g:"Saúde e pessoal",l:[["💊","remédio farmácia"],["🏥","hospital saúde"],["🩺","médico consulta"],["🦷","dentista"],["👓","óculos"],["💈","barbearia cabelo"],["💅","beleza salão"],["👕","roupa"],["👟","calçado tênis"],["🏋️","academia esporte"],["🧴","higiene"],["👶","filho criança"],["🐶","pet animal cachorro"],["🎓","educação curso escola"],["📚","livros"]]},
+{g:"Dinheiro e trabalho",l:[["💼","trabalho"],["💵","dinheiro"],["💰","bônus"],["🪙","moeda"],["🎁","presente gorjeta"],["🤝","parceria"],["🧑‍💼","cliente fixo"],["📈","investimento lucro"],["📱","aplicativo"],["🏷️","etiqueta"],["⭐","favorito outro"],["❤️","doação"]]},
+{g:"Lazer",l:[["🎬","cinema filme"],["🎮","jogos"],["🎵","música"],["🏖️","praia férias"],["⚽","futebol esporte"],["🎉","festa"],["🎂","aniversário"],["🛍️","compras shopping"],["🍻","bar saída"],["🎟️","ingresso evento"]]}
+];
+var icCb=null;
+function icAbre(cb){icCb=cb;$("icq").value="";icGrade();$("ov5").className="on"}
+function icGrade(){
+  var q=$("icq").value.trim().toLowerCase(),h="";
+  ICONBANK.forEach(function(g){
+    var l=g.l.filter(function(x){return !q||x[1].indexOf(q)>=0||g.g.toLowerCase().indexOf(q)>=0});
+    if(l.length)h+='<div class="icgt">'+g.g+'</div><div class="icg">'+l.map(function(x){return '<button type="button" data-i="'+x[0]+'">'+x[0]+'</button>'}).join("")+'</div>';
+  });
+  $("icgrid").innerHTML=h||'<div style="font-size:13px;color:var(--mut);padding:16px 0">Nenhum ícone encontrado. Você pode digitar um emoji no campo "ou digite outro emoji".</div>';
+}
 function cleanIc(v){return typeof v==="string"&&v.length>0&&v.length<=8&&!/[<>&"'`]/.test(v)?v:"💼"}
-function icFill(){$("icsel").innerHTML=ICONS.map(function(x){return '<option value="'+x[0]+'">'+x[0]+" "+x[1]+"</option>"}).join("")+'<option value="__outro">✏️ Outro emoji…</option>';$("icsel").value=modo==="r"?"💼":"🏷️";$("icown").style.display="none";$("icown").value=""}
+function icFill(){var v=modo==="r"?"💼":"🏷️";$("icsel").value=v;$("icprev").textContent=v;$("icown").value=""}
 function allRec(){return REC.concat(customRec.map(function(n){return [n,n,cleanIc(recIc[n])]}))}
 function em(t,e){return t==='uber'?'<span class="mk u">Uber</span>':t==='99'?'<span class="mk n">99</span>':t==='indrive'?'<span class="mk i">inDrive</span>':e}
 var custom=[],customRec=[],recIc={},icSel="💼",turno=null,turnos=[],tdArm=false,venc=[],fixos=[],vedit=null,vdArm=null,fxArm=null,fuelInfo={},perfil={nome:"",veic:"",placa:"",odo:0,odoTs:0},meta={dia:0,mes:0,dias:0},manut=[],servs=[],editS=null,exS=false,fotoAtual=null,fil="todos",gmodo="d",mdArm=null,cdArm=null,ceOld=null;
@@ -460,7 +492,7 @@ function fillSels(){
   $("vsel").innerHTML=op(VN);$("fxsel").innerHTML=op(FN);
 }
 function fuelCalc(){
-  var L=dados.filter(function(e){return e.tipo==="Combustível"&&e.l>0&&e.o>0}).sort(function(a,b){return a.o-b.o||a.id-b.id}),it=[],km=0,lt=0,vl=0,map={};
+  var L=dados.filter(function(e){return e.tipo==="Abastecimento"&&e.l>0&&e.o>0}).sort(function(a,b){return a.o-b.o||a.id-b.id}),it=[],km=0,lt=0,vl=0,map={};
   for(var i=1;i<L.length;i++){
     var p=L[i-1],c=L[i],d=c.o-p.o;
     if(d>0){var x={id:c.id,data:c.data,l:c.l,o:c.o,valor:c.valor,km:d,kml:d/c.l,cpk:c.valor/d};it.push(x);map[c.id]=x;km+=d;lt+=c.l;vl+=c.valor}
@@ -468,8 +500,8 @@ function fuelCalc(){
   return {it:it,map:map,kml:lt>0?km/lt:0,cpk:km>0?vl/km:0};
 }
 function renderFuel(){
-  var f=fuelCalc(),all=dados.filter(function(e){return e.tipo==="Combustível"&&e.l>0}),h="";
-  if(!all.length){$("fuelres").innerHTML='<div style="font-size:13px;color:var(--mut);line-height:1.5">Ao lançar um abastecimento (Despesa → Combustível), informe os litros e o odômetro. Com dois abastecimentos, o app calcula o consumo e o custo por km.</div>';return}
+  var f=fuelCalc(),all=dados.filter(function(e){return e.tipo==="Abastecimento"&&e.l>0}),h="";
+  if(!all.length){$("fuelres").innerHTML='<div style="font-size:13px;color:var(--mut);line-height:1.5">Ao lançar um abastecimento (Despesa → Abastecimento), informe os litros e o odômetro. Com dois abastecimentos, o app calcula o consumo e o custo por km.</div>';return}
   var tl=0,tv=0;all.forEach(function(e){tl+=e.l;tv+=e.valor});
   h+=kv("Abastecimentos registrados",String(all.length))+kv("Preço médio por litro",brl(tv/tl));
   if(f.it.length){
@@ -540,7 +572,7 @@ function renderTurno(){
   if(!turno){
     h='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>⏱️ Turno</b><div style="font-size:12px;color:var(--mut);margin-top:2px">Conte suas horas, com pausas se precisar</div></div><button class="pb" data-t="iniciar" style="width:auto;margin:0;padding:12px 18px">▶ Iniciar</button></div>';
     turnos.slice(0,3).forEach(function(x,i){
-      h+=(i===0?'<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">Últimos turnos</div>':'')+'<div class="ir" style="font-size:13px"><div class="t">'+fmtBR(iso(new Date(x.ini)))+' · '+fmtDur(x.mt)+(x.mp>0?' · pausa '+fmtDur(x.mp):'')+'</div><button data-th="'+x.id+'">＋ lançar horas</button></div>';
+      h+=(i===0?'<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">Últimos turnos</div>':'')+'<div class="ir" style="font-size:13px"><div class="t">'+fmtBR(iso(new Date(x.ini)))+' · '+hhmm(x.ini)+(x.fim?'–'+hhmm(x.fim):'')+' · '+fmtDur(x.mt)+(x.mp>0?' · pausa '+fmtDur(x.mp):'')+'</div><button data-th="'+x.id+'">＋ lançar horas</button></div>';
     });
   }else{
     var pz=emPausa(turno);
@@ -568,8 +600,8 @@ function encerrar(){
   turnos=[{id:ag,ini:t.ini,fim:ag,mt:mt,mp:mp}].concat(turnos).slice(0,30);
   saveCats();renderTurno();
   var hh=Math.round(mt/3600000*100)/100;
-  abrir();setModo("r");$("hin").value=hh;$("data").value=iso(new Date(t.ini));
-  toast("⏹ "+fmtDur(mt)+" trabalhadas"+(mp>0?" (pausas: "+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Registre a receita do turno.");
+  abrir();setModo("r");$("hin").value=hh;$("hini").value=hhmm(t.ini);$("data").value=iso(new Date(t.ini));
+  toast("⏹ Início às "+hhmm(t.ini)+" · "+fmtDur(mt)+" trabalhadas"+(mp>0?" (pausas: "+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Registre a receita do turno.");
 }
 function perfilLimpa(o){o=o&&typeof o==="object"?o:{};return {nome:String(o.nome||"").slice(0,40),veic:String(o.veic||"").slice(0,40),placa:String(o.placa||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),odo:Math.max(0,Math.round(+o.odo||0)),odoTs:Math.max(0,Math.round(+o.odoTs||0))}}
 function fillPerfil(){$("cnome").value=perfil.nome;$("cveic").value=perfil.veic;$("cplaca").value=perfil.placa;$("codo").value=odoAtual()!==null?Math.round(odoAtual()):"";odoInfo()}
@@ -633,7 +665,7 @@ function renderMan(){
 }
 function renderCl(){
   var h="";
-  function row(k,i,n){return '<div class="ir"><div class="t">'+((recIc[n]?cleanIc(recIc[n]):(k==="r"?"💼":"🏷️"))+' ')+esc(n)+'<div style="font-size:11px;color:var(--mut)">'+(k==="r"?"Origem de receita":"Categoria de despesa")+'</div></div><button data-ce="'+k+i+'">✏️</button><button data-cd="'+k+i+'">'+(cdArm===k+i?'Confirmar?':'🗑')+'</button></div>'}
+  function row(k,i,n){return '<div class="ir"><div class="t">'+((recIc[n]?cleanIc(recIc[n]):(k==="r"?"💼":"🏷️"))+' ')+esc(n)+'<div style="font-size:11px;color:var(--mut)">'+(k==="r"?"Origem de receita":"Categoria de despesa")+'</div></div><button data-ci="'+k+i+'">🎨</button><button data-ce="'+k+i+'">✏️</button><button data-cd="'+k+i+'">'+(cdArm===k+i?'Confirmar?':'🗑')+'</button></div>'}
   customRec.forEach(function(n,i){h+=row("r",i,n)});
   custom.forEach(function(n,i){h+=row("d",i,n)});
   $("clist").innerHTML=h||'<div style="font-size:13px;color:var(--mut)">Você ainda não criou categorias ou origens. Crie ao lançar: Despesa → Nova categoria, ou Receita → Nova origem.</div>';
@@ -932,7 +964,7 @@ function render(){
     if(e.data!==ult){h+='<div class="dia">'+diaTxt(e.data)+'</div>';ult=e.data}
     var i=info(e.tipo),g=isR(e.tipo);
     h+='<div class="it" data-id="'+e.id+'">'+(e.tipo==="uber"||e.tipo==="99"||e.tipo==="indrive"?em(e.tipo):'<div class="ic" style="background:'+(g?'rgba(0,168,107,.15)':'rgba(229,72,77,.15)')+'">'+i[2]+'</div>')+
-       '<div class="t">'+esc(i[1])+(e.km?'<small>'+e.km+' km</small>':'')+(e.l?'<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>':'')+'</div>'+
+       '<div class="t">'+esc(i[1])+(e.km?'<small>'+e.km+' km</small>':'')+(/^\d\d:\d\d$/.test(e.hi||"")?'<small>🕗 início '+e.hi+'</small>':'')+(e.l?'<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>':'')+'</div>'+
        '<b class="'+(g?'ok':'bad')+'">'+(g?'':'-')+brl(e.valor)+'</b></div>';
   });
   $("lista").innerHTML=(h?'<div class="hint">Toque em um lançamento para editar ou excluir</div>'+h:'')||'<div class="vazio">Nenhum lançamento neste mês.<br>Toque no + para começar.</div>';
@@ -968,7 +1000,7 @@ function chips(){
   h+='<option value="__nova">➕ Nova categoria…</option></select>';
   $("chips").innerHTML=h;updDel();
 }
-function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=m==="r"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
+function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=$("hiWrap").style.display=m==="r"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
 var d4={k:null,n:null,arm:false};
 function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2600)}
 function refreshUI(){
@@ -1006,20 +1038,20 @@ function d4Fim(dest,ms){
 function updDel(){
   var ok=modo==="r"?customRec.indexOf(cat)>=0:custom.indexOf(cat)>=0;
   $("delcat").style.display=ok?"block":"none";
-  $("fuelWrap").style.display=(modo==="d"&&cat==="Combustível")?"":"none";
+  $("fuelWrap").style.display=(modo==="d"&&cat==="Abastecimento")?"":"none";
 }
 function ultimo(){return dados.length?dados.slice().sort(function(a,b){return b.id-a.id})[0]:null}
 function repTxt(){var u=ultimo();return u?"🔁 Repetir último: "+info(u.tipo)[1]+" "+brl(u.valor):""}
 function fillRep(){
   var u=ultimo();if(!u)return;
   cat=u.tipo;setModo(isR(u.tipo)?"r":"d");
-  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("flit").value=u.l||"";$("fodo").value="";
+  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("flit").value=u.l||"";$("fodo").value="";
   $("err").textContent="";toast("🔁 Último lançamento copiado. Ajuste o que precisar e salve.");
 }
 var editId=null,exArm=false;
 function abrir(e){
   editId=e?e.id:null;exArm=false;
-  $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";
+  $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";
   $("err").textContent="";$("sv").textContent=e?"Salvar alterações":"Salvar";
   $("ex").style.display=e?"block":"none";$("ex").textContent="Excluir lançamento";
   if(e){cat=e.tipo;setModo(isR(e.tipo)?"r":"d")}else setModo("r");
@@ -1040,7 +1072,7 @@ $("novaOk").onclick=function(){
   var n=$("novaIn").value.trim().replace(/\s+/g," ");
   if(!n)return;
   var ex=allRec().concat(allDes()).filter(function(x){return x[1].toLowerCase()===n.toLowerCase()})[0];
-  if(ex){cat=ex[0]}else{if(modo==="r")customRec.push(n);else custom.push(n);var iv=$("icsel").value;recIc[n]=cleanIc(iv==="__outro"?$("icown").value.trim():iv);saveCats();cat=n}
+  if(ex){cat=ex[0]}else{if(modo==="r")customRec.push(n);else custom.push(n);var iv=$("icown").value.trim()||$("icsel").value;recIc[n]=cleanIc(iv);saveCats();cat=n}
   chips();
 };
 $("turnoBox").onclick=function(ev){
@@ -1048,7 +1080,7 @@ $("turnoBox").onclick=function(ev){
   var t=b.getAttribute("data-t"),th=b.getAttribute("data-th"),ag=Date.now();
   if(th){
     var x=turnos.filter(function(y){return String(y.id)===th})[0];
-    if(x){abrir();setModo("r");$("hin").value=Math.round(x.mt/3600000*100)/100;$("data").value=iso(new Date(x.ini));toast("Horas do turno preenchidas. Informe a receita e salve.")}
+    if(x){abrir();setModo("r");$("hin").value=Math.round(x.mt/3600000*100)/100;$("hini").value=hhmm(x.ini);$("data").value=iso(new Date(x.ini));toast("Horas do turno preenchidas. Informe a receita e salve.")}
     return;
   }
   if(t==="iniciar"){turno={ini:ag,pausas:[]};tdArm=false}
@@ -1079,7 +1111,11 @@ $("d4dl").onclick=function(){
   d4Fim(null,ms);
   if(ed)fechar();
 };
-$("icsel").onchange=function(){var o=this.value==="__outro";$("icown").style.display=o?"block":"none";if(o)$("icown").focus()};
+$("icbtn").onclick=function(){icAbre(function(i){$("icsel").value=i;$("icprev").textContent=i;$("icown").value=""})};
+$("icq").oninput=icGrade;
+$("ic5cx").onclick=function(){$("ov5").className="";icCb=null};
+$("ov5").onclick=function(e){if(e.target===$("ov5")){$("ov5").className="";icCb=null}};
+$("icgrid").onclick=function(e){var b=e.target.closest("[data-i]");if(!b)return;var f=icCb;$("ov5").className="";icCb=null;if(f)f(b.getAttribute("data-i"))};
 $("chips").onclick=function(e){
   var b=e.target.closest?e.target.closest("[data-c]"):null,c=b&&b.getAttribute("data-c");
   if(!c)return;
@@ -1089,11 +1125,11 @@ $("chips").onclick=function(e){
 $("sv").onclick=function(){
   var v=parseFloat($("valor").value);
   if(!(v>0)){$("err").textContent="Digite um valor maior que zero.";return}
-  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,fc=modo==="d"&&cat==="Combustível",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
+  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
   if(editId){
     var e=dados.filter(function(x){return x.id===editId})[0];
-    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.l=lit;e.o=od;e.data=d}
-  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,l:lit,o:od,data:d});
+    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.l=lit;e.o=od;e.data=d}
+  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,hi:hi,l:lit,o:od,data:d});
   save(Array.from(new Set(ms)));
   if(fc&&od>0&&od>(odoAtual()||0)){perfil.odo=od;perfil.odoTs=Date.now();saveCats();fillPerfil()}
   var p=d.split("-");cur=new Date(+p[0],+p[1]-1,1);fechar();render();
@@ -1180,6 +1216,8 @@ $("madd").onclick=function(){
 };
 $("clist").onclick=function(ev){
   var b=ev.target.closest("button");if(!b)return;
+  var ci=b.getAttribute("data-ci");
+  if(ci!==null){var ar=ci[0]==="r"?customRec:custom,nm=ar[+ci.slice(1)];icAbre(function(i){recIc[nm]=cleanIc(i);saveCats();render();toast("🎨 Ícone atualizado")});return}
   var e=b.getAttribute("data-ce"),d=b.getAttribute("data-cd");
   if(e!==null){ceOld=e;$("cin").value=(e[0]==="r"?customRec:custom)[+e.slice(1)];$("cedit").style.display="flex";$("cin").focus()}
   else if(d!==null){
@@ -1280,7 +1318,7 @@ $("fim").onchange=function(){
   r.onload=function(){
     try{
       var l=JSON.parse(r.result),ent=Array.isArray(l)?l:l.dados;if(!Array.isArray(ent))throw 0;
-      save(Array.from(new Set(mescla(ent))));
+      save(Array.from(new Set(mescla(ent))));migrar();
       if(!Array.isArray(l)){
         (l.servs||[]).forEach(function(x){
           if(!x||!x.id||!x.peca||servs.some(function(y){return y.id===x.id}))return;
