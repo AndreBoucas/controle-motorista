@@ -1,6 +1,6 @@
 {
-  "name": "Controle do Motorista",
-  "short_name": "Motorista",
+  "name": "Controle Financeiro Motorista APP",
+  "short_name": "Controle Financeiro Motorista APP",
   "description": "Controle de ganhos, gastos, metas, manutenção e relatórios para motoristas de aplicativo.",
   "id": "./",
   "start_url": "./",
@@ -11,8 +11,21 @@
   "background_color": "#f2f4f5",
   "theme_color": "#00a88f",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
