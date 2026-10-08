@@ -1,7 +1,7 @@
 // Service worker: deixa o app abrir sem internet.
 // Ao publicar uma versão nova, troque o número em VERSAO.
-var VERSAO = "motorista-v21";
-var ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png"];
+var VERSAO = "motorista-v22";
+var ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png?v=22", "./icon-512.png?v=22", "./icon-maskable-512.png?v=22", "./apple-touch-icon.png?v=22"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(VERSAO).then(function (c) { return c.addAll(ARQUIVOS); }).then(function () { return self.skipWaiting(); }));
@@ -21,7 +21,7 @@ self.addEventListener("fetch", function (e) {
   var u = new URL(e.request.url);
   if (u.origin !== location.origin) return;
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(function (hit) {
+    caches.match(e.request, e.request.mode === "navigate" ? { ignoreSearch: true } : {}).then(function (hit) {
       var rede = fetch(e.request).then(function (r) {
         if (r && r.ok) { var cp = r.clone(); caches.open(VERSAO).then(function (c) { c.put(e.request, cp); }); }
         return r;
