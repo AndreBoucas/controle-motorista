@@ -189,7 +189,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 08/10/2026 · v26</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 09/10/2026 · v27</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -877,12 +877,22 @@ function metaUI(){
   $("mhint").textContent=auto?"Meta por dia calculada: "+brl(m/d)+" ("+brl(m)+" ÷ "+d+" dias trabalhados).":"Informe a meta do mês e os dias trabalhados para a meta por dia ser calculada automaticamente. Sem os dias, digite a meta por dia.";
 }
 function fillMeta(){$("mmes").value=meta.mes||"";$("mdias").value=meta.dias||"";$("mdia").value=meta.dias>0&&metaMes()>0?Math.round(metaMes()/meta.dias*100)/100:(meta.dia||"");metaUI()}
-function barra(t,v,g){var pc=Math.max(0,Math.min(100,v/g*100));return '<div class="st" style="padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;gap:8px"><span>'+t+'</span><b>'+brl(v)+' / '+brl(g)+'</b></div><div class="pg" style="margin-top:8px"><i style="width:'+pc+'%"></i></div></div>'}
+function barra(t,v,g,ex){var pc=Math.max(0,Math.min(100,v/g*100));return '<div class="st" style="padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;gap:8px"><span>'+t+'</span><b>'+brl(v)+' / '+brl(g)+'</b></div><div class="pg" style="margin-top:8px"><i style="width:'+pc+'%"></i></div>'+(ex||'')+'</div>'}
 function metasUI(s,m){
   var h="";
   if(metaMes()>0){
     var dt={};dados.forEach(function(e){if(e.data.slice(0,7)===m&&isR(e.tipo))dt[e.data]=1});
-    h+=barra("Meta do mês"+(meta.dias>0?" · "+Object.keys(dt).length+"/"+meta.dias+" dias":""),s,metaMes());
+    var gm=metaMes(),falta=gm-s,pct=Math.max(0,Math.round(s/gm*100)),trab=Object.keys(dt).length,ex;
+    if(falta>0.004){
+      ex='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px"><b style="color:var(--bad)">Falta '+brl(falta)+'</b><span style="color:var(--mut)">'+pct+'% da meta</span></div>';
+      if(meta.dias>0){
+        var rest=Math.max(0,meta.dias-trab);
+        ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">'+(rest>0?'Faltam '+rest+(rest===1?' dia':' dias')+' de trabalho · precisa de '+brl(falta/rest)+' por dia.':'Os '+meta.dias+' dias planejados já foram trabalhados.')+'</div>';
+      }
+    }else{
+      ex='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px"><b style="color:var(--ok)">✅ Meta batida!</b><span style="color:var(--mut)">'+(falta<-0.004?brl(-falta)+' acima ('+pct+'%)':pct+'%')+'</span></div>';
+    }
+    h+=barra("Meta do mês"+(meta.dias>0?" · "+trab+"/"+meta.dias+" dias":""),s,gm,ex);
   }
   if(metaDia()>0&&m===hoje().slice(0,7)){var ld=0;dados.forEach(function(e){if(e.data===hoje())ld+=isR(e.tipo)?e.valor:-e.valor});h+=barra("Meta de hoje",ld,metaDia())}
   var al=[];

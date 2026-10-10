@@ -1,6 +1,6 @@
 // Service worker: deixa o app abrir sem internet.
 // Ao publicar uma versão nova, troque o número em VERSAO.
-var VERSAO = "motorista-v26";
+var VERSAO = "motorista-v27";
 var ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png?v=22", "./icon-512.png?v=22", "./icon-maskable-512.png?v=22", "./apple-touch-icon.png?v=22"];
 
 self.addEventListener("install", function (e) {
