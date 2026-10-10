@@ -189,7 +189,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 09/10/2026 · v27</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 09/10/2026 · v28</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -208,6 +208,15 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Receitas por origem</h3><div id="rrec"></div></div>
   <div class="st"><h3>Despesas por categoria</h3><div id="rdes"></div></div>
   <div class="st"><h3>Manutenção no período</h3><div id="rman"></div></div>
+  <div class="st" id="edcard"><h3>🧾 Relatório de despesas</h3>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:6px;line-height:1.4">Segue o período escolhido no topo. Escolha a origem e, se quiser, toque nas categorias e contas para filtrar.</div>
+    <label style="display:block;font-size:12px;color:var(--mut);margin:8px 0 4px">Origem</label>
+    <select id="edorig" class="fsel" style="width:100%"><option value="A">Todas (corrida + casa)</option><option value="C">Despesas da corrida</option><option value="H">Despesas de casa (módulo Despesas)</option></select>
+    <label style="display:block;font-size:12px;color:var(--mut);margin:12px 0 4px">Categorias e contas (sem seleção = todas)</label>
+    <div id="edchips" class="chips" style="justify-content:flex-start"></div>
+    <button id="edlimpa" style="border:0;background:none;color:var(--hd);font-size:13px;font-weight:700;padding:8px 0">Limpar seleção</button>
+    <div id="edres" style="margin-top:8px"></div>
+    <button class="pb" id="edpdf">⬇️ Baixar relatório de despesas (PDF)</button></div>
   <div class="st"><h3>Resumo anual (Imposto de Renda)</h3>
     <select id="iano" class="fsel"></select>
     <div id="ires" style="margin-top:10px"></div>
@@ -859,6 +868,147 @@ function migraVenc(){
   });
   venc=ficar;return true;
 }
+var edSel={},edOrig="A";
+function edChips(){
+  var cs=[];
+  if(edOrig!=="H"){var nomes=allDes().map(function(x){return x[0]});dados.forEach(function(e){if(!isR(e.tipo)&&nomes.indexOf(e.tipo)<0)nomes.push(e.tipo)});nomes.forEach(function(n){var i=info(n);cs.push(["c:"+n,i[2]+" "+i[1]])})}
+  if(edOrig!=="C")contas.forEach(function(c){cs.push(["d:"+c.id,cleanIc(c.icone)+" "+c.nome])});
+  return cs;
+}
+function edCalc(){
+  var pr=rPeriodo(),ini=pr[0],fim=pr[1],hm=hoje().slice(0,7),sel=Object.keys(edSel).filter(function(k){return edSel[k]});
+  function incl(k){return !sel.length||!!edSel[k]}
+  var o={ini:ini,fim:fim,hm:hm,orig:edOrig,sel:sel,rows:[],itens:{},tc:0,tcasa:0,pago:0,pend:0,prev:0,mes:{},meses:[]};
+  if(edOrig!=="H")dados.forEach(function(e){
+    if(isR(e.tipo)||e.data<ini||e.data>fim||!incl("c:"+e.tipo))return;
+    o.rows.push(e);o.tc+=e.valor;var i=info(e.tipo),k="c:"+e.tipo;
+    o.itens[k]=o.itens[k]||{n:i[1],v:0,cor:"var(--bad)",cp:[0.85,0.25,0.28]};o.itens[k].v+=e.valor;
+  });
+  if(edOrig!=="C"){
+    var a=ini==="0000-01-01"?null:ini.slice(0,7),b=fim==="9999-12-31"?null:fim.slice(0,7);
+    if(!b)b=hm;if(!a)a=proxMes(b,-11);
+    for(var m=a;m<=b&&o.meses.length<36;m=proxMes(m,1))o.meses.push(m);
+    contas.forEach(function(c){
+      if(!incl("d:"+c.id))return;
+      o.meses.forEach(function(m){
+        var v=valorMes(c,m);if(v==null)return;
+        var lig=c.ref!=null,pv=lig?Math.min(v,sepAtual(c,m)):((c.pg&&c.pg[m])?v:0),fut=m>hm,rest=v-pv,tx;
+        if(lig)tx=pv>=v-0.005?"Separado":(pv>0?"Separado "+brl(pv):(fut?"Previsto":"A separar"));
+        else tx=pv>0?"Pago":(fut?"Previsto":"A pagar");
+        o.tcasa+=v;o.pago+=pv;if(fut)o.prev+=rest;else o.pend+=rest;
+        var mm=o.mes[m]=o.mes[m]||{tot:0,pago:0,it:[]};mm.tot+=v;mm.pago+=pv;mm.it.push({n:c.nome,ic:cleanIc(c.icone),v:v,tx:tx});
+        var k="d:"+c.id;o.itens[k]=o.itens[k]||{n:c.nome,v:0,cor:"var(--hd)",cp:[0,0.66,0.56]};o.itens[k].v+=v;
+      });
+    });
+  }
+  o.total=o.tc+o.tcasa;return o;
+}
+function renderEd(){
+  var cs=edChips(),keys=cs.map(function(x){return x[0]});
+  Object.keys(edSel).forEach(function(k){if(keys.indexOf(k)<0)delete edSel[k]});
+  $("edchips").innerHTML=cs.map(function(x){return '<button class="chip'+(edSel[x[0]]?' on':'')+'" data-ek="'+esc(x[0])+'">'+esc(x[1])+'</button>'}).join("");
+  $("edorig").value=edOrig;
+  var c=edCalc(),h=kv("Total de despesas",brl(c.total),"bad");
+  if(c.orig==="A")h+=kv("🚗 Da corrida",brl(c.tc))+kv("🏠 De casa",brl(c.tcasa));
+  if(c.orig!=="C")h+=kv("Pago / separado",brl(c.pago),"ok")+kv("A pagar",brl(c.pend))+kv("Previsto (meses futuros)",brl(c.prev));
+  var arr=Object.keys(c.itens).map(function(k){return c.itens[k]}).sort(function(a,b){return b.v-a.v});
+  h+='<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">Por item</div>';
+  h+=arr.length?arr.map(function(x){var pc=c.total>0?x.v/c.total*100:0;return '<div class="bar"><div class="l"><span>'+esc(x.n)+'</span><span>'+brl(x.v)+' · '+pc.toFixed(0)+'%</span></div><div class="b"><i style="width:'+pc+'%;background:'+x.cor+'"></i></div></div>'}).join(""):'<div style="font-size:13px;color:var(--mut)">Sem despesas no período.</div>';
+  if(c.orig!=="C"){
+    var ms=Object.keys(c.mes).sort();
+    h+='<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">Contas de casa por mês</div>';
+    h+=ms.length?ms.map(function(m){var x=c.mes[m];return '<div style="padding:8px 0;border-top:1px solid var(--bd)"><div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px"><span style="text-transform:capitalize">'+mesTxt(m)+'</span><span>'+brl(x.tot)+'</span></div>'+x.it.map(function(i){return '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut);gap:8px;margin-top:2px"><span>'+i.ic+' '+esc(i.n)+' · '+esc(i.tx)+'</span><span>'+brl(i.v)+'</span></div>'}).join("")+'</div>'}).join(""):'<div style="font-size:13px;color:var(--mut)">Sem contas de casa no período.</div>';
+  }
+  if(c.orig!=="H"){
+    var rs=c.rows.slice().sort(function(a,b){return b.data.localeCompare(a.data)||b.id-a.id});
+    h+='<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">Lançamentos da corrida ('+rs.length+')</div>';
+    h+=rs.length?rs.slice(0,40).map(function(e){return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px solid var(--bd)"><span>'+fmtBR(e.data).slice(0,5)+' · '+esc(info(e.tipo)[1])+'</span><b class="bad">'+brl(e.valor)+'</b></div>'}).join("")+(rs.length>40?'<div style="font-size:12px;color:var(--mut);margin-top:6px">+ '+(rs.length-40)+' lançamentos no PDF.</div>':""):'<div style="font-size:13px;color:var(--mut)">Nenhum lançamento no período.</div>';
+  }
+  $("edres").innerHTML=h;
+}
+function pdfDoc(sub){
+  var pages=[],cur,y,GR=[0.42,0.45,0.5],OK=[0,0.55,0.35],BAD=[0.85,0.25,0.28],BR=[0,0.66,0.56],W=PW-2*MG,o={GR:GR,OK:OK,BAD:BAD,BR:BR,W:W};
+  function np(){cur=[];pages.push(cur);y=PH-MG}
+  o.need=function(h){if(y-h<MG+18)np()};
+  o.sec=function(t){o.need(44);y-=14;cur.push(pop(MG,y,t,12,true,BR));y-=5;cur.push(prect(MG,y,W,0.8,[0.85,0.87,0.9]));y-=14};
+  o.kvr=function(a,b,col){o.need(16);cur.push(pop(MG,y,a,10,false,GR));cur.push(pop(PW-MG,y,b,10,true,col,true));y-=16};
+  o.bar=function(l,v,pc,col){o.need(28);cur.push(pop(MG,y,l,10));cur.push(pop(PW-MG,y,v,10,false,GR,true));y-=8;cur.push(prect(MG,y-4,W,5,[0.92,0.93,0.95]));cur.push(prect(MG,y-4,W*Math.min(100,pc)/100,5,col));y-=16};
+  o.vazio=function(t){pdfWrap(t,10,W).forEach(function(l){o.need(16);cur.push(pop(MG,y,l,10,false,GR));y-=14})};
+  o.txt=function(x,t,sz,b,col,right){cur.push(pop(x,y,t,sz,b,col,right))};
+  o.rect=function(x,dy,w,h,col){cur.push(prect(x,y+dy,w,h,col))};
+  o.down=function(n){y-=n};
+  np();
+  var pf=[];if(perfil.nome)pf.push("Motorista: "+perfil.nome);if(perfil.veic)pf.push("Veículo: "+perfil.veic);if(perfil.placa)pf.push("Placa: "+perfil.placa);
+  var pl=pf.length?pdfWrap(pf.join("    |    "),10,W-40):[],bh=78+(pl.length?10+pl.length*13:0);
+  cur.push(prect(0,PH-bh,PW,bh,BR));
+  cur.push(pop(MG,PH-38,"Relatório de Despesas",20,true,[1,1,1]));
+  cur.push(pop(MG,PH-58,sub,10,false,[1,1,1]));
+  pl.forEach(function(l,i){cur.push(pop(MG,PH-76-13*i,l,10,true,[1,1,1]))});
+  y=PH-bh;
+  o.fim=function(){
+    var n=pages.length;
+    pages.forEach(function(pg,i){pg.push(pop(MG,24,"Controle Financeiro Motorista APP",8,false,GR));pg.push(pop(PW-MG,24,"Página "+(i+1)+" de "+n,8,false,GR,true))});
+    var out="%PDF-1.4\n%\xe2\xe3\xcf\xd3\n",offs=[],no=0;
+    function add(body){no++;offs[no]=out.length;out+=no+" 0 obj\n"+body+"\nendobj\n"}
+    var kids=[];for(var i=0;i<n;i++)kids.push((5+2*i)+" 0 R");
+    add("<< /Type /Catalog /Pages 2 0 R >>");
+    add("<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+n+" >>");
+    add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    pages.forEach(function(pg,i){
+      var st=pg.join("");
+      add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+PW+" "+PH+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+2*i)+" 0 R >>");
+      add("<< /Length "+st.length+" >>\nstream\n"+st+"endstream");
+    });
+    var xo=out.length;
+    out+="xref\n0 "+(no+1)+"\n0000000000 65535 f \n";
+    for(var k=1;k<=no;k++)out+=String(offs[k]).padStart(10,"0")+" 00000 n \n";
+    out+="trailer\n<< /Size "+(no+1)+" /Root 1 0 R >>\nstartxref\n"+xo+"\n%%EOF";
+    var u=new Uint8Array(out.length);for(var j=0;j<out.length;j++)u[j]=out.charCodeAt(j)&255;
+    return new Blob([u],{type:"application/pdf"});
+  };
+  return o;
+}
+function edPdf(c){
+  var d=pdfDoc("Período: "+relLbl(c)+"    |    "+({A:"Corrida e casa",C:"Despesas da corrida",H:"Despesas de casa"})[c.orig]+"    |    Gerado em "+fmtBR(hoje()));
+  d.sec("Resumo");
+  d.kvr("Total de despesas",brl(c.total),d.BAD);
+  if(c.orig==="A"){d.kvr("Da corrida",brl(c.tc));d.kvr("De casa",brl(c.tcasa))}
+  if(c.orig!=="C"){d.kvr("Pago / separado",brl(c.pago),d.OK);d.kvr("A pagar",brl(c.pend));d.kvr("Previsto (meses futuros)",brl(c.prev))}
+  if(c.sel.length){var nm={};edChips().forEach(function(x){nm[x[0]]=x[1].replace(/^\S+\s/,"")});d.vazio("Filtro: "+c.sel.map(function(k){return nm[k]||k}).join(", "))}
+  d.sec("Por item");
+  var arr=Object.keys(c.itens).map(function(k){return c.itens[k]}).sort(function(a,b){return b.v-a.v});
+  if(!arr.length)d.vazio("Sem despesas no período.");
+  arr.forEach(function(x){var pc=c.total>0?x.v/c.total*100:0;d.bar(x.n,brl(x.v)+"  ("+pc.toFixed(0)+"%)",pc,x.cp)});
+  if(c.orig!=="C"){
+    d.sec("Contas de casa por mês");
+    var ms=Object.keys(c.mes).sort();
+    if(!ms.length)d.vazio("Sem contas de casa no período.");
+    ms.forEach(function(m){
+      var x=c.mes[m];d.need(34+x.it.length*0);
+      d.txt(MG,mesTxt(m).charAt(0).toUpperCase()+mesTxt(m).slice(1),10,true,d.BR);d.txt(PW-MG,"Total "+brl(x.tot),10,true,null,true);d.down(14);
+      x.it.forEach(function(i){d.need(14);d.txt(MG+10,i.n,9,false);d.txt(MG+300,i.tx,9,false,d.GR);d.txt(PW-MG,brl(i.v),9,false,null,true);d.down(13)});
+      d.down(4);
+    });
+  }
+  if(c.orig!=="H"){
+    d.sec("Lançamentos da corrida");
+    var rs=c.rows.slice().sort(function(a,b){return a.data.localeCompare(b.data)||a.id-b.id});
+    function th(){d.rect(MG,-4,d.W,15,[0.93,0.94,0.96]);d.txt(MG+4,"Data",9,true);d.txt(MG+80,"Categoria",9,true);d.txt(PW-MG-4,"Valor",9,true,null,true);d.down(17)}
+    if(!rs.length)d.vazio("Nenhum lançamento no período.");
+    else{
+      d.need(40);th();
+      rs.forEach(function(e,i){
+        if(i&&false){}
+        d.need(14);
+        if(i%2)d.rect(MG,-4,d.W,14,[0.97,0.97,0.98]);
+        var cat=info(e.tipo)[1];if(cat.length>34)cat=cat.slice(0,33)+"...";
+        d.txt(MG+4,fmtBR(e.data),9,false);d.txt(MG+80,cat,9,false);d.txt(PW-MG-4,brl(e.valor),9,true,d.BAD,true);d.down(14);
+      });
+    }
+  }
+  return d.fim();
+}
 function perfilLimpa(o){o=o&&typeof o==="object"?o:{};return {nome:String(o.nome||"").slice(0,40),veic:String(o.veic||"").slice(0,40),placa:String(o.placa||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),odo:Math.max(0,Math.round(+o.odo||0)),odoTs:Math.max(0,Math.round(+o.odoTs||0))}}
 function fillPerfil(){$("cnome").value=perfil.nome;$("cveic").value=perfil.veic;$("cplaca").value=perfil.placa;$("codo").value=odoAtual()!==null?Math.round(odoAtual()):"";odoInfo()}
 function perfilUI(){
@@ -1016,6 +1166,7 @@ function renderRel(){
   var S=c.S.slice().sort(function(a,b){return String(a.data).localeCompare(String(b.data))}),h="";
   S.forEach(function(x){h+='<div class="ir"><div class="t"><b>'+esc(x.peca)+'</b><div style="font-size:12px;color:var(--mut)">'+fmtBR(x.data)+(x.local?' · '+esc(x.local):'')+'</div></div><b>'+(x.valor?brl(x.valor):'-')+'</b></div>'});
   $("rman").innerHTML=(h||'<div style="font-size:13px;color:var(--mut)">Nenhuma manutenção no período.</div>')+(S.length?kv("Total gasto",brl(c.man)):"");
+  renderEd();
 }
 function relTxt(c){
   var t=["RELATÓRIO DO MOTORISTA","Período: "+relLbl(c)].concat(perfil.nome?["Motorista: "+perfil.nome]:[],perfil.veic?["Veículo: "+perfil.veic]:[],perfil.placa?["Placa: "+perfil.placa]:[],[""]).concat(["Receitas: "+brl(c.r),"Despesas: "+brl(c.s),"Lucro: "+brl(c.l),
@@ -1628,6 +1779,10 @@ $("rper").onchange=function(){
   renderRel();
 };
 $("rde").onchange=$("rate").onchange=renderRel;
+$("edorig").onchange=function(){edOrig=this.value;renderEd()};
+$("edchips").onclick=function(e){var b=e.target.closest("[data-ek]");if(!b)return;var k=b.getAttribute("data-ek");if(edSel[k])delete edSel[k];else edSel[k]=1;renderEd()};
+$("edlimpa").onclick=function(){edSel={};renderEd()};
+$("edpdf").onclick=function(){setSync("Gerando PDF…");try{baixar("relatorio-despesas-"+hoje()+".pdf",edPdf(edCalc()))}catch(e){setSync("⚠️ Não foi possível gerar o PDF")}};
 $("rpdf").onclick=function(){setSync("Gerando PDF…");try{baixar("relatorio-motorista-"+hoje()+".pdf",relPdf(relCalc()))}catch(e){setSync("⚠️ Não foi possível gerar o PDF")}};
 $("rtxt").onclick=function(){baixar("relatorio-"+hoje()+".txt",relTxt(relCalc()))};
 $("ant").onclick=function(){cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);render()};
