@@ -83,6 +83,7 @@ header{background:var(--hd);color:#fff;padding:14px 16px 64px;border-radius:0 0 
 .mopt{display:block;width:100%;text-align:left;padding:12px 14px;margin-top:8px;border:2px solid var(--bd);border-radius:12px;background:var(--in);color:var(--tx)}
 .mopt b{display:block;font-size:15px}.mopt small{display:block;color:var(--mut);font-size:12px;margin-top:2px;line-height:1.35}.mopt.on{border-color:var(--hd);background:rgba(0,168,143,.12)}
 .dgt{font-size:12px;font-weight:800;color:var(--mut);margin:12px 0 2px}.dgt+.ir{border-top:0}
+.pdn{width:40px;height:36px;border:0;border-radius:10px;background:var(--in);color:var(--tx);font-size:20px}
 .sync{text-align:center;font-size:12px;opacity:.85;margin-top:8px}
 .bk{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bk button{padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx);font-size:14px;font-weight:600}
 nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:calc(100% - 20px);max-width:500px;background:var(--card);border:1px solid var(--bd);border-radius:26px;box-shadow:0 8px 28px rgba(0,0,0,.2);display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;padding:6px;z-index:4}
@@ -128,6 +129,12 @@ nav button.on b{font-weight:800}
 <div style="margin:0 14px 10px"><button class="pb" id="reprap" style="margin-top:0;background:var(--card);color:var(--tx);border:1px solid var(--bd);display:none"></button></div>
 <div style="margin:0 14px 10px"><select id="fil" class="fsel"></select></div><div class="sec" id="lista"></div></div>
 <div id="p2" style="display:none">
+  <div class="st" id="pdcard"><h3>📊 Painel do dia</h3>
+    <div class="tg" id="pdtab"><button data-pm="L" class="on">Lucro</button><button data-pm="R">Receitas</button><button data-pm="D">Despesas</button><button data-pm="K">Km</button></div>
+    <div id="pdchart" style="overflow-x:auto;padding-bottom:4px"></div>
+    <div id="pdleg" style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.4"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px"><button id="pdant" class="pdn">‹</button><b id="pddt" style="text-transform:capitalize;text-align:center"></b><button id="pdprox" class="pdn">›</button></div>
+    <div id="pdkpi"></div><div id="pdrec"></div><div id="pddes"></div></div>
   <div class="st"><h3>Receitas x Despesas</h3><div class="tg"><button id="gd" class="on">Por dia</button><button id="gs">Por semana</button></div><div id="graf"></div><div id="gmax" style="font-size:11px;color:var(--mut);margin-top:6px"></div></div>
   <div class="st"><h3>Despesas por categoria</h3><div id="cats"></div></div>
   <div class="st"><h3>Detalhes</h3><div id="det"></div></div>
@@ -193,7 +200,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 13/10/2026 · v34</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 14/10/2026 · v35</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -1039,6 +1046,76 @@ function edPdf(c){
   }
   return d.fim();
 }
+var pdM="L",pdDia=null;
+function pdDados(m){
+  var n=diasDoMes(m),o=[];
+  for(var i=1;i<=n;i++)o.push({d:m+"-"+p2(i),r:0,s:0,k:0,h:0,l:0});
+  dados.forEach(function(e){
+    if(e.data.slice(0,7)!==m)return;
+    var x=o[+e.data.slice(8,10)-1];if(!x)return;
+    if(isR(e.tipo))x.r+=e.valor;else x.s+=e.valor;
+    x.k+=e.km||0;x.h+=e.h||0;
+  });
+  o.forEach(function(x){x.l=x.r-x.s});
+  return o;
+}
+function pdFmt(v,mt){
+  if(mt==="K")return String(Math.round(v));
+  var a=Math.abs(v);
+  if(a>=1000)return (v<0?"-":"")+(Math.round(a/100)/10).toString().replace(".",",")+"k";
+  return String(Math.round(v));
+}
+function pdChart(arr,mt,goal){
+  var n=arr.length,step=30,bw=20,H=200,top=22,bot=26,ph=H-top-bot,W=n*step+16;
+  var vals=arr.map(function(x){return mt==="L"?x.l:mt==="R"?x.r:mt==="D"?x.s:x.k});
+  var mp=Math.max(0,Math.max.apply(null,vals)),mn=Math.max(0,-Math.min.apply(null,vals));
+  if(mt==="L"&&goal>mp)mp=goal;
+  var tot=(mp+mn)||1,y0=top+mp/tot*ph,h="";
+  vals.forEach(function(v,i){
+    var cx=8+i*step+step/2,bh=Math.abs(v)/tot*ph,y=v>=0?y0-bh:y0,sel=arr[i].d===pdDia;
+    var col=mt==="L"?(v>=0?"var(--ok)":"var(--bad)"):mt==="R"?"var(--ok)":mt==="D"?"var(--bad)":"var(--hd)";
+    if(sel)h+='<rect x="'+(cx-step/2)+'" y="0" width="'+step+'" height="'+H+'" rx="6" style="fill:var(--in)"/>';
+    if(bh>0.4)h+='<rect x="'+(cx-bw/2)+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="3" style="fill:'+col+';opacity:'+(sel?1:.82)+'"/>';
+    if(v!==0)h+='<text x="'+cx+'" y="'+(v>=0?y-4:y+bh+11)+'" text-anchor="middle" style="fill:var(--tx);font-size:9px;font-weight:'+(sel?800:600)+'">'+pdFmt(v,mt)+'</text>';
+    h+='<text x="'+cx+'" y="'+(H-8)+'" text-anchor="middle" style="fill:'+(sel?'var(--hd)':'var(--mut)')+';font-size:10px;font-weight:'+(sel?800:500)+'">'+(i+1)+'</text>';
+  });
+  h+='<line x1="0" x2="'+W+'" y1="'+y0+'" y2="'+y0+'" style="stroke:var(--mut);stroke-width:1;opacity:.5"/>';
+  if(mt==="L"&&goal>0){
+    var yg=y0-goal/tot*ph;
+    h+='<line x1="0" x2="'+W+'" y1="'+yg+'" y2="'+yg+'" stroke-dasharray="5 4" style="stroke:var(--hd);stroke-width:1.5"/><text x="4" y="'+(yg-4)+'" style="fill:var(--hd);font-size:9px;font-weight:800;paint-order:stroke;stroke:var(--card);stroke-width:3px">Meta do dia '+brl(goal)+'</text>';
+  }
+  arr.forEach(function(x,i){h+='<rect data-pd="'+x.d+'" x="'+(8+i*step)+'" y="0" width="'+step+'" height="'+H+'" style="fill:transparent;cursor:pointer"/>'});
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block">'+h+'</svg>';
+}
+function renderPd(){
+  var m=mk(),arr=pdDados(m),hm=hoje(),goal=metaDiaBase()+impDia(m);
+  if(!pdDia||pdDia.slice(0,7)!==m){
+    if(hm.slice(0,7)===m)pdDia=hm;
+    else{var u=null;arr.forEach(function(x){if(x.r||x.s)u=x.d});pdDia=u||arr[0].d}
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#pdtab button"),function(b){b.className=b.getAttribute("data-pm")===pdM?"on":""});
+  var box=$("pdchart");box.innerHTML=pdChart(arr,pdM,goal);
+  var iSel=+pdDia.slice(8,10)-1;try{box.scrollLeft=Math.max(0,8+iSel*30-box.clientWidth/2+15)}catch(e){}
+  var tr=0,ts=0,tk=0,mel=null;
+  arr.forEach(function(x){tr+=x.r;ts+=x.s;tk+=x.k;if(x.l>0&&(!mel||x.l>mel.l))mel=x});
+  $("pdleg").textContent=({L:"Lucro do dia (receitas − despesas). ",R:"Receitas do dia. ",D:"Despesas do dia. ",K:"Km rodados no dia. "})[pdM]+"Toque numa barra para ver o dia."+(pdM==="L"&&goal>0?" A linha tracejada é a meta do dia.":"")+(mel?" Melhor dia: "+fmtBR(mel.d).slice(0,5)+" ("+brl(mel.l)+").":"");
+  var x=arr[iSel],p=pdDia.split("-");
+  $("pddt").textContent=SEM[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+", "+p[2]+"/"+p[1]+"/"+p[0];
+  $("pdant").disabled=iSel<=0;$("pdprox").disabled=iSel>=arr.length-1;$("pdant").style.opacity=iSel<=0?.35:1;$("pdprox").style.opacity=iSel>=arr.length-1?.35:1;
+  var k=kv("Receitas",brl(x.r),"ok")+kv("Despesas",brl(x.s),"bad")+kv("Lucro do dia",brl(x.l),x.l>=0?"ok":"bad")+kv("Km rodados",x.k.toLocaleString("pt-BR")+" km")+kv("Horas trabalhadas",x.h>0?x.h.toLocaleString("pt-BR")+" h":"-")+kv("Lucro por km",x.k>0?brl(x.l/x.k):"-")+kv("Ganho por hora",x.h>0?brl(x.r/x.h):"-");
+  if(goal>0)k+=kv("Meta do dia",brl(goal))+(x.l>=goal-0.004?kv("Resultado","✅ Meta batida (+ "+brl(x.l-goal)+")","ok"):kv("Falta para a meta",brl(goal-x.l),"bad"));
+  $("pdkpi").innerHTML=k;
+  var pr={},pd={};
+  dados.forEach(function(e){if(e.data!==pdDia)return;if(isR(e.tipo))pr[e.tipo]=(pr[e.tipo]||0)+e.valor;else pd[e.tipo]=(pd[e.tipo]||0)+e.valor});
+  function grp(o,tot,cor,tit){
+    var ks=Object.keys(o).sort(function(a,b){return o[b]-o[a]});
+    if(!ks.length)return "";
+    return '<div style="font-size:12px;color:var(--mut);margin:12px 0 2px">'+tit+'</div>'+ks.map(function(t){var pc=tot>0?o[t]/tot*100:0,i=info(t);return '<div class="bar"><div class="l"><span>'+i[2]+' '+esc(i[1])+'</span><span>'+brl(o[t])+' · '+pc.toFixed(0)+'%</span></div><div class="b"><i style="width:'+pc+'%;background:'+cor+'"></i></div></div>'}).join("");
+  }
+  $("pdrec").innerHTML=grp(pr,x.r,"var(--ok)","Receitas por origem");
+  $("pddes").innerHTML=grp(pd,x.s,"var(--bad)","Despesas por categoria");
+  if(!Object.keys(pr).length&&!Object.keys(pd).length)$("pdrec").innerHTML='<div style="font-size:13px;color:var(--mut);margin-top:10px">Nenhum lançamento neste dia.</div>';
+}
 function perfilLimpa(o){o=o&&typeof o==="object"?o:{};return {nome:String(o.nome||"").slice(0,40),veic:String(o.veic||"").slice(0,40),placa:String(o.placa||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),odo:Math.max(0,Math.round(+o.odo||0)),odoTs:Math.max(0,Math.round(+o.odoTs||0))}}
 function fillPerfil(){$("cnome").value=perfil.nome;$("cveic").value=perfil.veic;$("cplaca").value=perfil.placa;$("codo").value=odoAtual()!==null?Math.round(odoAtual()):"";odoInfo()}
 function perfilUI(){
@@ -1461,7 +1538,7 @@ function render(){
     '<div class="kv"><span>Horas trabalhadas</span><b>'+(hs>0?hs.toLocaleString("pt-BR")+' h':"-")+'</b></div>'+
     '<div class="kv"><span>Ganho por hora</span><b>'+(hs>0?brl(r/hs):"-")+'</b></div>'+
     '<div class="kv"><span>Lucro por hora</span><b>'+(hs>0?brl(s/hs):"-")+'</b></div>';
-  metasUI(s,m);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderImp();odoInfo();renderTurno();
+  metasUI(s,m);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderImp();renderPd();odoInfo();renderTurno();
   $("reprap").style.display=dados.length?"block":"none";$("reprap").textContent=repTxt();
 }
 
@@ -1747,6 +1824,10 @@ $("nmenu").onclick=gavAbre;$("menufab").onclick=gavAbre;
 $("gav").onclick=function(e){if(e.target===$("gav")){gavFecha();return}var b=e.target.closest("[data-g]");if(b){gavFecha();aba(+b.getAttribute("data-g"))}};
 $("menucard").onclick=function(e){var b=e.target.closest("[data-mm]");if(!b)return;menuModo=b.getAttribute("data-mm");try{localStorage.setItem("motorista_menu",menuModo)}catch(x){}aplicaMenu();toast("🧭 Menu: "+b.querySelector("b").textContent.replace(" (recomendado)",""))};
 $("mmes").oninput=$("mdias").oninput=metaUI;
+$("pdtab").onclick=function(e){var b=e.target.closest("[data-pm]");if(!b)return;pdM=b.getAttribute("data-pm");renderPd()};
+$("pdchart").onclick=function(e){var r=e.target.closest("[data-pd]");if(!r)return;pdDia=r.getAttribute("data-pd");renderPd()};
+$("pdant").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]-1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);renderPd()}};
+$("pdprox").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);renderPd()}};
 $("impdiv").onchange=function(){meta=Object.assign({},meta,{impdiv:this.value==="trab"?"trab":undefined});saveCats();render();toast("✅ Impostos: "+(this.value==="trab"?"reserva completa":"só o valor do dia"))};
 $("msv").onclick=function(){
   var d=Math.min(31,Math.max(0,parseInt($("mdias").value)||0));
