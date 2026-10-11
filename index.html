@@ -130,7 +130,7 @@ nav button.on b{font-weight:800}
 <div style="margin:0 14px 10px"><select id="fil" class="fsel"></select></div><div class="sec" id="lista"></div></div>
 <div id="p2" style="display:none">
   <div class="st" id="pdcard"><h3>📊 Painel do dia</h3>
-    <div class="tg" id="pdtab"><button data-pm="L" class="on">Lucro</button><button data-pm="R">Receitas</button><button data-pm="D">Despesas</button><button data-pm="K">Km</button></div>
+    <div class="tg" id="pdtab"><button data-pm="L" class="on">Lucro</button><button data-pm="R">Receitas</button><button data-pm="D">Despesas</button><button data-pm="K">Km</button><button data-pm="C">Corridas</button></div>
     <div id="pdchart" style="overflow-x:auto;padding-bottom:4px"></div>
     <div id="pdleg" style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.4"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px"><button id="pdant" class="pdn">‹</button><b id="pddt" style="text-transform:capitalize;text-align:center"></b><button id="pdprox" class="pdn">›</button></div>
@@ -200,7 +200,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 14/10/2026 · v35</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 15/10/2026 · v36</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -298,7 +298,8 @@ nav button.on b{font-weight:800}
     <div id="dtWrap"><label>Data</label><input type="date" id="data"></div>
     <div id="kmWrap"><label>Km rodados (opcional)</label><input type="number" inputmode="decimal" id="kmin" placeholder="0"></div>
     <div id="hWrap"><label>Horas trabalhadas (opcional)</label><input type="number" inputmode="decimal" id="hin" placeholder="0"></div>
-    <div id="hiWrap" style="grid-column:1/-1"><label>Horário de início do turno (opcional)</label><input type="time" id="hini"></div>
+    <div id="hiWrap"><label>Início do turno (opcional)</label><input type="time" id="hini"></div>
+    <div id="crWrap"><label>Corridas no dia (quantidade)</label><input type="number" inputmode="numeric" min="0" id="ncor" placeholder="0"></div>
   </div>
   <div class="f" id="fuelWrap" style="display:none;margin-top:10px">
     <div><label>Litros abastecidos</label><input type="number" inputmode="decimal" step="0.01" id="flit" placeholder="0"></div>
@@ -761,7 +762,7 @@ function encerrar(){
   saveCats();renderTurno();
   var hh=Math.round(mt/3600000*100)/100;
   abrir();setModo("r");$("hin").value=hh;$("hini").value=hhmm(t.ini);$("data").value=iso(new Date(t.ini));
-  toast("⏹ Início às "+hhmm(t.ini)+" · "+fmtDur(mt)+" trabalhadas"+(mp>0?" (pausas: "+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Registre a receita do turno.");
+  toast("⏹ Início às "+hhmm(t.ini)+" · "+fmtDur(mt)+" trabalhadas"+(mp>0?" (pausas: "+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Informe a receita e a quantidade de corridas do turno.");
 }
 function defaultContas(){return [
   {id:"f1",nome:"Aluguel",tipo:"F",icone:"🏠"},{id:"f2",nome:"Financiamento do veículo",tipo:"F",icone:"🚗"},
@@ -1049,25 +1050,25 @@ function edPdf(c){
 var pdM="L",pdDia=null;
 function pdDados(m){
   var n=diasDoMes(m),o=[];
-  for(var i=1;i<=n;i++)o.push({d:m+"-"+p2(i),r:0,s:0,k:0,h:0,l:0});
+  for(var i=1;i<=n;i++)o.push({d:m+"-"+p2(i),r:0,s:0,k:0,h:0,l:0,c:0});
   dados.forEach(function(e){
     if(e.data.slice(0,7)!==m)return;
     var x=o[+e.data.slice(8,10)-1];if(!x)return;
     if(isR(e.tipo))x.r+=e.valor;else x.s+=e.valor;
-    x.k+=e.km||0;x.h+=e.h||0;
+    x.k+=e.km||0;x.h+=e.h||0;if(isR(e.tipo))x.c+=e.nc||0;
   });
   o.forEach(function(x){x.l=x.r-x.s});
   return o;
 }
 function pdFmt(v,mt){
-  if(mt==="K")return String(Math.round(v));
+  if(mt==="K"||mt==="C")return String(Math.round(v));
   var a=Math.abs(v);
   if(a>=1000)return (v<0?"-":"")+(Math.round(a/100)/10).toString().replace(".",",")+"k";
   return String(Math.round(v));
 }
 function pdChart(arr,mt,goal){
   var n=arr.length,step=30,bw=20,H=200,top=22,bot=26,ph=H-top-bot,W=n*step+16;
-  var vals=arr.map(function(x){return mt==="L"?x.l:mt==="R"?x.r:mt==="D"?x.s:x.k});
+  var vals=arr.map(function(x){return mt==="L"?x.l:mt==="R"?x.r:mt==="D"?x.s:mt==="K"?x.k:x.c});
   var mp=Math.max(0,Math.max.apply(null,vals)),mn=Math.max(0,-Math.min.apply(null,vals));
   if(mt==="L"&&goal>mp)mp=goal;
   var tot=(mp+mn)||1,y0=top+mp/tot*ph,h="";
@@ -1098,11 +1099,11 @@ function renderPd(){
   var iSel=+pdDia.slice(8,10)-1;try{box.scrollLeft=Math.max(0,8+iSel*30-box.clientWidth/2+15)}catch(e){}
   var tr=0,ts=0,tk=0,mel=null;
   arr.forEach(function(x){tr+=x.r;ts+=x.s;tk+=x.k;if(x.l>0&&(!mel||x.l>mel.l))mel=x});
-  $("pdleg").textContent=({L:"Lucro do dia (receitas − despesas). ",R:"Receitas do dia. ",D:"Despesas do dia. ",K:"Km rodados no dia. "})[pdM]+"Toque numa barra para ver o dia."+(pdM==="L"&&goal>0?" A linha tracejada é a meta do dia.":"")+(mel?" Melhor dia: "+fmtBR(mel.d).slice(0,5)+" ("+brl(mel.l)+").":"");
+  $("pdleg").textContent=({L:"Lucro do dia (receitas − despesas). ",R:"Receitas do dia. ",D:"Despesas do dia. ",K:"Km rodados no dia. ",C:"Corridas feitas no dia. "})[pdM]+"Toque numa barra para ver o dia."+(pdM==="L"&&goal>0?" A linha tracejada é a meta do dia.":"")+(mel?" Melhor dia: "+fmtBR(mel.d).slice(0,5)+" ("+brl(mel.l)+").":"");
   var x=arr[iSel],p=pdDia.split("-");
   $("pddt").textContent=SEM[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+", "+p[2]+"/"+p[1]+"/"+p[0];
   $("pdant").disabled=iSel<=0;$("pdprox").disabled=iSel>=arr.length-1;$("pdant").style.opacity=iSel<=0?.35:1;$("pdprox").style.opacity=iSel>=arr.length-1?.35:1;
-  var k=kv("Receitas",brl(x.r),"ok")+kv("Despesas",brl(x.s),"bad")+kv("Lucro do dia",brl(x.l),x.l>=0?"ok":"bad")+kv("Km rodados",x.k.toLocaleString("pt-BR")+" km")+kv("Horas trabalhadas",x.h>0?x.h.toLocaleString("pt-BR")+" h":"-")+kv("Lucro por km",x.k>0?brl(x.l/x.k):"-")+kv("Ganho por hora",x.h>0?brl(x.r/x.h):"-");
+  var k=kv("Receitas",brl(x.r),"ok")+kv("Despesas",brl(x.s),"bad")+kv("Lucro do dia",brl(x.l),x.l>=0?"ok":"bad")+kv("Km rodados",x.k.toLocaleString("pt-BR")+" km")+kv("Horas trabalhadas",x.h>0?x.h.toLocaleString("pt-BR")+" h":"-")+kv("Lucro por km",x.k>0?brl(x.l/x.k):"-")+kv("Ganho por hora",x.h>0?brl(x.r/x.h):"-")+kv("Corridas",x.c>0?String(x.c):"-")+kv("Ganho por corrida",x.c>0?brl(x.r/x.c):"-")+kv("Lucro por corrida",x.c>0?brl(x.l/x.c):"-");
   if(goal>0)k+=kv("Meta do dia",brl(goal))+(x.l>=goal-0.004?kv("Resultado","✅ Meta batida (+ "+brl(x.l-goal)+")","ok"):kv("Falta para a meta",brl(goal-x.l),"bad"));
   $("pdkpi").innerHTML=k;
   var pr={},pd={};
@@ -1236,10 +1237,10 @@ function rPeriodo(){
   return [f(a),f(b)];
 }
 function relCalc(ov){
-  var pr=ov||rPeriodo(),ini=pr[0],fim=pr[1],r=0,s=0,k=0,hs=0,por={},cat={},dias={},dl={},mm={};
+  var pr=ov||rPeriodo(),ini=pr[0],fim=pr[1],r=0,s=0,k=0,hs=0,nc=0,por={},cat={},dias={},dl={},mm={};
   var L=dados.filter(function(e){return e.data>=ini&&e.data<=fim}),S=servs.filter(function(x){return x.data>=ini&&x.data<=fim});
   L.forEach(function(e){
-    k+=e.km||0;hs+=e.h||0;
+    k+=e.km||0;hs+=e.h||0;if(isR(e.tipo))nc+=e.nc||0;
     var m7=e.data.slice(0,7);mm[m7]=mm[m7]||{r:0,s:0};if(isR(e.tipo))mm[m7].r+=e.valor;else mm[m7].s+=e.valor;
     if(isR(e.tipo)){r+=e.valor;por[e.tipo]=(por[e.tipo]||0)+e.valor;dias[e.data]=1;dl[e.data]=(dl[e.data]||0)+e.valor}
     else{s+=e.valor;cat[e.tipo]=(cat[e.tipo]||0)+e.valor;dl[e.data]=(dl[e.data]||0)-e.valor}
@@ -1247,7 +1248,7 @@ function relCalc(ov){
   var best=null;Object.keys(dl).forEach(function(d){if(best===null||dl[d]>dl[best])best=d});
   var wd=[0,0,0,0,0,0,0],wc=[0,0,0,0,0,0,0];
   Object.keys(dias).forEach(function(d){var p=d.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();wd[w]+=dl[d];wc[w]++});
-  return {wd:wd,wc:wc,mm:mm,ini:ini,fim:fim,L:L,S:S,r:r,s:s,l:r-s,k:k,hs:hs,por:por,cat:cat,nd:Object.keys(dias).length,best:best,bestV:best?dl[best]:0,man:S.reduce(function(a,x){return a+(x.valor||0)},0)};
+  return {wd:wd,wc:wc,mm:mm,ini:ini,fim:fim,L:L,S:S,r:r,s:s,l:r-s,k:k,hs:hs,nc:nc,por:por,cat:cat,nd:Object.keys(dias).length,best:best,bestV:best?dl[best]:0,man:S.reduce(function(a,x){return a+(x.valor||0)},0)};
 }
 var NS=["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
 function wdRows(c){
@@ -1297,7 +1298,7 @@ function renderRel(){
     kv("Dias trabalhados",c.nd)+kv("Lucro médio por dia trabalhado",c.nd>0?brl(c.l/c.nd):"-")+
     kv("Melhor dia",c.best?fmtBR(c.best)+" ("+brl(c.bestV)+")":"-")+
     kv("Km rodados",c.k.toLocaleString("pt-BR")+" km")+kv("Lucro por km",c.k>0?brl(c.l/c.k):"-")+
-    kv("Horas trabalhadas",c.hs>0?c.hs.toLocaleString("pt-BR")+" h":"-")+kv("Ganho por hora",c.hs>0?brl(c.r/c.hs):"-")+kv("Lucro por hora",c.hs>0?brl(c.l/c.hs):"-");
+    kv("Horas trabalhadas",c.hs>0?c.hs.toLocaleString("pt-BR")+" h":"-")+kv("Ganho por hora",c.hs>0?brl(c.r/c.hs):"-")+kv("Lucro por hora",c.hs>0?brl(c.l/c.hs):"-")+kv("Corridas",c.nc>0?String(c.nc):"-")+kv("Ganho por corrida",c.nc>0?brl(c.r/c.nc):"-");
   $("rwd").innerHTML=wdHtml(c);
   $("rrec").innerHTML=relBars(c.por,c.r,"var(--ok)");
   $("rdes").innerHTML=relBars(c.cat,c.s,"var(--bad)");
@@ -1372,7 +1373,7 @@ function relPdf(c,ir){
   kvr("Dias trabalhados",String(c.nd));kvr("Lucro médio por dia trabalhado",c.nd>0?brl(c.l/c.nd):"-");
   kvr("Melhor dia",c.best?fmtBR(c.best)+" ("+brl(c.bestV)+")":"-");
   kvr("Km rodados",c.k.toLocaleString("pt-BR")+" km");kvr("Lucro por km",c.k>0?brl(c.l/c.k):"-");
-  kvr("Horas trabalhadas",c.hs>0?c.hs.toLocaleString("pt-BR")+" h":"-");kvr("Ganho por hora",c.hs>0?brl(c.r/c.hs):"-");kvr("Lucro por hora",c.hs>0?brl(c.l/c.hs):"-");
+  kvr("Horas trabalhadas",c.hs>0?c.hs.toLocaleString("pt-BR")+" h":"-");kvr("Ganho por hora",c.hs>0?brl(c.r/c.hs):"-");kvr("Lucro por hora",c.hs>0?brl(c.l/c.hs):"-");kvr("Corridas",c.nc>0?String(c.nc):"-");kvr("Ganho por corrida",c.nc>0?brl(c.r/c.nc):"-");
   sec("Desempenho por dia da semana");
   (function(){var w=wdRows(c);if(w.bi<0){vazio("Sem dias trabalhados no período.");return}
     w.ord.forEach(function(d,i){var a=w.av[i];if(a===null)return;var pc=Math.max(0,a)/Math.max(w.mx,1)*100;bar(NS[d]+" ("+c.wc[d]+(c.wc[d]===1?" dia":" dias")+")"+(i===w.bi?"  - melhor dia":""),brl(a),pc,i===w.bi?OK:BR)});
@@ -1504,11 +1505,11 @@ function arqUI(){
 function render(){
   syncReservas();
   fuelInfo=fuelCalc().map;
-  var m=mk(),r=0,d=0,k=0,por={},hs=0,its=[],cats={};
+  var m=mk(),r=0,d=0,k=0,por={},hs=0,ncs=0,its=[],cats={};
   $("mtxt").textContent=cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
   dados.forEach(function(e){
     if(e.data.slice(0,7)!==m)return;
-    its.push(e);k+=e.km||0;hs+=e.h||0;
+    its.push(e);k+=e.km||0;hs+=e.h||0;ncs+=e.nc||0;
     if(isR(e.tipo)){r+=e.valor;por[e.tipo]=(por[e.tipo]||0)+e.valor}
     else{d+=e.valor;cats[e.tipo]=(cats[e.tipo]||0)+e.valor}
   });
@@ -1521,7 +1522,7 @@ function render(){
     if(e.data!==ult){h+='<div class="dia">'+diaTxt(e.data)+'</div>';ult=e.data}
     var i=info(e.tipo),g=isR(e.tipo);
     h+='<div class="it" data-id="'+e.id+'">'+(e.tipo==="uber"||e.tipo==="99"||e.tipo==="indrive"?em(e.tipo):'<div class="ic" style="background:'+(g?'rgba(0,168,107,.15)':'rgba(229,72,77,.15)')+'">'+i[2]+'</div>')+
-       '<div class="t">'+esc(i[1])+(e.km?'<small>'+e.km+' km</small>':'')+(/^\d\d:\d\d$/.test(e.hi||"")?'<small>🕗 início '+e.hi+'</small>':'')+(e.ob&&!g?'<small>📝 '+esc(String(e.ob).slice(0,120))+'</small>':'')+(e.l?'<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>':'')+'</div>'+
+       '<div class="t">'+esc(i[1])+(e.km?'<small>'+e.km+' km</small>':'')+(/^\d\d:\d\d$/.test(e.hi||"")?'<small>🕗 início '+e.hi+'</small>':'')+(g&&e.nc>0?'<small>🚕 '+(e.nc|0)+((e.nc|0)===1?' corrida':' corridas')+'</small>':'')+(e.ob&&!g?'<small>📝 '+esc(String(e.ob).slice(0,120))+'</small>':'')+(e.l?'<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>':'')+'</div>'+
        '<b class="'+(g?'ok':'bad')+'">'+(g?'':'-')+brl(e.valor)+'</b></div>';
   });
   $("lista").innerHTML=(h?'<div class="hint">Toque em um lançamento para editar ou excluir</div>'+h:'')||'<div class="vazio">Nenhum lançamento neste mês.<br>Toque no + para começar.</div>';
@@ -1537,7 +1538,8 @@ function render(){
     '<div class="kv"><span>Lucro por km</span><b>'+(k>0?brl(s/k):"-")+'</b></div>'+
     '<div class="kv"><span>Horas trabalhadas</span><b>'+(hs>0?hs.toLocaleString("pt-BR")+' h':"-")+'</b></div>'+
     '<div class="kv"><span>Ganho por hora</span><b>'+(hs>0?brl(r/hs):"-")+'</b></div>'+
-    '<div class="kv"><span>Lucro por hora</span><b>'+(hs>0?brl(s/hs):"-")+'</b></div>';
+    '<div class="kv"><span>Lucro por hora</span><b>'+(hs>0?brl(s/hs):"-")+'</b></div>'+
+    '<div class="kv"><span>Corridas</span><b>'+(ncs>0?ncs:"-")+'</b></div><div class="kv"><span>Ganho por corrida</span><b>'+(ncs>0?brl(r/ncs):"-")+'</b></div>';
   metasUI(s,m);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderImp();renderPd();odoInfo();renderTurno();
   $("reprap").style.display=dados.length?"block":"none";$("reprap").textContent=repTxt();
 }
@@ -1557,7 +1559,7 @@ function chips(){
   h+='<option value="__nova">➕ Nova categoria…</option></select>';
   $("chips").innerHTML=h;updDel();
 }
-function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=$("hiWrap").style.display=m==="r"?"":"none";$("obsWrap").style.display=m==="d"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
+function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=$("hiWrap").style.display=$("crWrap").style.display=m==="r"?"":"none";$("obsWrap").style.display=m==="d"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
 var d4={k:null,n:null,arm:false};
 function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2600)}
 function refreshUI(){
@@ -1602,13 +1604,13 @@ function repTxt(){var u=ultimo();return u?"🔁 Repetir último: "+info(u.tipo)[
 function fillRep(){
   var u=ultimo();if(!u)return;
   cat=u.tipo;setModo(isR(u.tipo)?"r":"d");
-  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("obs").value="";$("flit").value=u.l||"";$("fodo").value="";
+  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("ncor").value="";$("obs").value="";$("flit").value=u.l||"";$("fodo").value="";
   $("err").textContent="";toast("🔁 Último lançamento copiado. Ajuste o que precisar e salve.");
 }
 var editId=null,exArm=false;
 function abrir(e){
   editId=e?e.id:null;exArm=false;
-  $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
+  $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
   $("err").textContent="";$("sv").textContent=e?"Salvar alterações":"Salvar";
   $("ex").style.display=e?"block":"none";$("ex").textContent="Excluir lançamento";
   if(e){cat=e.tipo;setModo(isR(e.tipo)?"r":"d")}else setModo("r");
@@ -1682,11 +1684,11 @@ $("chips").onclick=function(e){
 $("sv").onclick=function(){
   var v=parseFloat($("valor").value);
   if(!(v>0)){$("err").textContent="Digite um valor maior que zero.";return}
-  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
+  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",nc=modo==="r"?Math.max(0,parseInt($("ncor").value)||0):0,ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
   if(editId){
     var e=dados.filter(function(x){return x.id===editId})[0];
-    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.l=lit;e.o=od;if(modo==="d")e.ob=ob;e.data=d}
-  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,hi:hi,l:lit,o:od,ob:ob,data:d});
+    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.nc=nc;e.l=lit;e.o=od;if(modo==="d")e.ob=ob;e.data=d}
+  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,hi:hi,nc:nc,l:lit,o:od,ob:ob,data:d});
   save(Array.from(new Set(ms)));
   if(fc&&od>0&&od>(odoAtual()||0)){perfil.odo=od;perfil.odoTs=Date.now();saveCats();fillPerfil()}
   var p=d.split("-");cur=new Date(+p[0],+p[1]-1,1);fechar();render();
