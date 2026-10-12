@@ -200,7 +200,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 18/10/2026 · v40</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 19/10/2026 · v41</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -244,13 +244,22 @@ nav button.on b{font-weight:800}
   <div class="st" id="dprox7box" style="display:none"><h3>📅 Próximas (anuais e parceladas)</h3><div style="font-size:12px;color:var(--mut);margin-bottom:6px">Contas que não vencem neste mês. Toque para editar.</div><div id="dprox7"></div></div>
 </div>
 <div id="p8" style="display:none">
+  <div class="st" id="gcdup" style="display:none;border:1px solid var(--bad)"></div>
   <div class="st"><h3>💼 Gestão de Custos</h3>
     <div class="tg" id="gctab"><button data-g="D" class="on">Custos diários</button><button data-g="A">Custos anuais</button><button data-g="R">Reservas</button></div>
     <div style="font-size:12px;color:var(--mut);margin:2px 0 6px">Composição da meta diária (hoje)</div>
     <div id="gcsum"></div></div>
+  <details class="st" id="gcreg"><summary style="font-weight:800;cursor:pointer">📌 Regras para não duplicar</summary>
+    <div style="font-size:13px;line-height:1.55;margin-top:8px">
+      <b>1. Gastos do dia</b> (almoço, lanche, combustível…): lance só em <b>Início → + → Despesa</b>. A Gestão apenas lê esses lançamentos. Por categoria, a meta do dia usa o <b>maior</b> entre o previsto e o lançado, nunca a soma dos dois.<br>
+      <b>2. Custos pagos uma vez por ano</b> (IPVA, vistoria do GNV, licenciamento, seguro): só em <b>Custos anuais</b>. Não lance o pagamento como despesa do dia.<br>
+      <b>3. Férias, folgas</b> e outras reservas: só em <b>Reservas</b>.<br>
+      <b>4. Contas de casa</b> (aluguel, luz, água, celular, financiamento): só em <b>Despesas</b>. Elas não entram na meta.<br>
+      <b>5. Nomes únicos:</b> o mesmo nome não pode existir em dois lugares. O app bloqueia o repetido e avisa se já houver algum.
+    </div></details>
   <div id="gcD">
     <div class="st"><h3>🍽️ Custos diários</h3>
-      <div style="font-size:12px;color:var(--mut);margin-bottom:6px;line-height:1.4">Categorias do dia a dia (as mesmas da tela de lançamento). O custo que você lança no dia entra inteiro na meta do dia. O previsto por dia é opcional: garante um mínimo na meta mesmo antes de lançar.</div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:6px;line-height:1.4">Categorias do dia a dia (as mesmas da tela de lançamento). Os valores aqui vêm dos lançamentos de despesa do dia (Início → + → Despesa). O que você lança entra inteiro na meta do dia. O previsto por dia é opcional: por categoria, vale o maior entre o previsto e o lançado, sem somar.</div>
       <div id="cdsum"></div><div id="cdlist"></div></div>
     <div class="st"><h3>➕ Novo custo diário</h3>
       <label>Nome</label><input id="cdn" maxlength="30" placeholder="Ex: Pedágio, Estacionamento">
@@ -308,6 +317,7 @@ nav button.on b{font-weight:800}
   <input id="valor" type="number" inputmode="decimal" step="0.01" placeholder="0,00">
   <div class="chips" id="chips"></div>
   <button type="button" id="delcat" style="display:none;margin:10px auto 0;background:none;border:0;color:var(--bad);font-size:13px;font-weight:600">🗑 Excluir esta categoria</button>
+  <div id="cathint" style="display:none;font-size:12px;color:var(--mut);text-align:center;margin-top:6px;line-height:1.4"></div>
   <div id="novaBox" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
     <input id="novaIn" maxlength="30" placeholder="Nome da nova categoria" style="width:100%;padding:12px;font-size:16px;border:1px solid var(--bd);border-radius:10px;background:var(--in);color:var(--tx)">
     <div id="icwrap" style="display:none">
@@ -730,22 +740,22 @@ function renderCD(){
   var m=mk(),r=cdReal(m),names=cdLista(),h="",real=0,pv=0;
   names.sort(function(a,b){return (r.tot[b]||0)-(r.tot[a]||0)});
   names.forEach(function(n){
-    var i=info(n),t=r.tot[n]||0,p=+catPrev[n]||0;real+=t;pv+=p;
-    h+='<div class="ir" data-cd="'+esc(n)+'"><div style="font-size:22px">'+i[2]+'</div><div class="t"><b>'+esc(i[1])+'</b><div style="font-size:12px;color:var(--mut)">No mês: '+brl(t)+(r.n>0?' · média '+brl(t/r.n)+'/dia':'')+'</div></div><div style="text-align:right;font-weight:800">'+(p>0?brl(p)+'<div style="font-size:11px;font-weight:600;color:var(--mut)">previsto/dia</div>':'<span style="color:var(--mut);font-weight:600">Definir</span>')+'</div></div>';
+    var i=info(n),t=r.tot[n]||0,p=+catPrev[n]||0,lh=lancCatD(hoje())[n]||0;real+=t;pv+=p;
+    h+='<div class="ir" data-cd="'+esc(n)+'"><div style="font-size:22px">'+i[2]+'</div><div class="t"><b>'+esc(i[1])+'</b><div style="font-size:12px;color:var(--mut)">No mês: '+brl(t)+(r.n>0?' · média '+brl(t/r.n)+'/dia':'')+'</div><div style="font-size:12px;color:var(--mut)">Hoje: lançado '+brl(lh)+(p>0?' · previsto '+brl(p):'')+' → na meta '+brl(Math.max(p,lh))+'</div></div><div style="text-align:right;font-weight:800">'+(p>0?brl(p)+'<div style="font-size:11px;font-weight:600;color:var(--mut)">previsto/dia</div>':'<span style="color:var(--mut);font-weight:600">Definir</span>')+'</div></div>';
   });
   $("cdlist").innerHTML=h;
-  $("cdsum").innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:4px;text-transform:capitalize">'+mesTxt(m)+'</div>'+kv("Custos do mês (lançados)",brl(real),"bad")+kv("Média por dia trabalhado",r.n>0?brl(real/r.n):"-")+kv("Previsto por dia (soma)",pv>0?brl(pv):"-");
+  $("cdsum").innerHTML='<div style="font-size:12px;color:var(--mut);margin-bottom:4px;text-transform:capitalize">'+mesTxt(m)+'</div>'+kv("Custos do mês (lançados)",brl(real),"bad")+kv("Média por dia trabalhado",r.n>0?brl(real/r.n):"-")+kv("Previsto por dia (soma)",pv>0?brl(pv):"-")+kv("Hoje: lançado",brl(Object.keys(lancCatD(hoje())).reduce(function(a,k){return a+lancCatD(hoje())[k]},0)))+kv("Hoje: na meta (por categoria)",brl(custoDiaDet(hoje()).tot),"ok")+'<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4">Cada categoria usa o maior entre o previsto e o lançado no dia. Nunca soma os dois.</div>';
 }
 function abrirS8(n){
   var r=cdReal(mk()),t=r.tot[n]||0,avg=r.n>0?t/r.n:0,i=info(n);
-  s8={n:n,avg:avg};$("s8t").textContent=i[2]+" "+i[1];
-  $("s8i").textContent="No mês: "+brl(t)+(r.n>0?" · média por dia trabalhado: "+brl(avg):" · sem dias trabalhados ainda")+". A meta do dia usa o maior valor entre o previsto e o que você lançar no dia.";
+  var lh=lancCatD(hoje())[n]||0;s8={n:n,avg:avg};$("s8t").textContent=i[2]+" "+i[1];
+  $("s8i").textContent="No mês: "+brl(t)+(r.n>0?" · média por dia trabalhado: "+brl(avg):" · sem dias trabalhados ainda")+". Hoje: lançado "+brl(lh)+". Por categoria, a meta do dia usa o maior valor entre o previsto e o lançado no dia (nunca soma os dois).";
   $("s8v").value=catPrev[n]>0?catPrev[n]:"";$("ov8").className="on";
 }
 function renderGcSum(){
   var hd=hoje(),hm=hd.slice(0,7),md=metaDiaD(hd),dvv=impModo()==="trab"?diasTrab():diasDoMes(hm),an=0,rs=0;
   venc.forEach(function(v){if(v.emb===false)return;var x=planoReserva(v).filter(function(p){return p.m===hm})[0];if(x){if(v.cat==="R")rs+=x.valor;else an+=x.valor}});
-  $("gcsum").innerHTML=kv("Sua meta por dia (base)",brl(md.base))+kv("+ Custos do dia",brl(md.cd))+kv("+ Custos anuais",brl(an/dvv))+kv("+ Reservas",brl(rs/dvv))+kv("= Meta de hoje",brl(md.total),"ok")+'<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4">Os custos do dia entram inteiros: valem o maior entre o previsto por dia e o que você lançou hoje. A meta compara com as receitas do dia, e o lucro do dia (receitas − custos) aparece no Início.</div>';
+  $("gcsum").innerHTML=kv("Sua meta por dia (base)",brl(md.base))+kv("+ Custos do dia",brl(md.cd))+kv("+ Custos anuais",brl(an/dvv))+kv("+ Reservas",brl(rs/dvv))+kv("= Meta de hoje",brl(md.total),"ok")+(function(){var it=custoDiaDet(hd).it;return it.length?'<div style="font-size:12px;color:var(--mut);margin-top:6px;line-height:1.5">Custos do dia por categoria: '+it.map(function(x){return esc(info(x.n)[1])+' '+brl(x.u)+' ('+(x.l>=x.p&&x.l>0?'lançado':'previsto')+')'}).join(' · ')+'</div>':''})()+'<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4">Os custos do dia entram inteiros: por categoria, valem o maior entre o previsto e o lançado hoje (nunca a soma dos dois). A meta compara com as receitas do dia, e o lucro do dia (receitas − custos) aparece no Início.</div>';
 }
 function gcSet(t){
   gcTab=t;["D","A","R"].forEach(function(k){$("gc"+k).style.display=k===t?"":"none"});
@@ -1235,11 +1245,49 @@ function metaMesBase(){return meta.mes||0}
 function diasDoMes(m){return new Date(+m.slice(0,4),+m.slice(5,7),0).getDate()}
 function impModo(){return meta.impdiv==="trab"?"trab":"mes"}
 function impDia(m){var r=reservasMes(m);return impModo()==="trab"?r/diasTrab():r/diasDoMes(m)}
+function nomeOnde(n,ign){
+  var k=nomeNorm(n);ign=ign||{};
+  if(allRec().concat(allDes()).some(function(x){return nomeNorm(x[1])===k&&x[0]!==ign.cat}))return "uma categoria de lançamento";
+  if(contas.some(function(x){return nomeNorm(x.nome)===k&&String(x.id)!==String(ign.conta)}))return "Despesas (contas de casa)";
+  var v=venc.filter(function(x){return nomeNorm(x.nome)===k&&String(x.id)!==String(ign.venc)})[0];
+  if(v)return v.cat==="R"?"Gestão de Custos › Reservas":"Gestão de Custos › Custos anuais";
+  return null;
+}
+function nomeAviso(n,onde){return "\""+n+"\" já existe em "+onde+". Cada custo fica em um só lugar para não duplicar."}
+function duplicidades(){
+  var mp={};
+  function add(n,w){var k=nomeNorm(n),o=mp[k]=mp[k]||{n:n,w:[],c:0};o.c++;if(o.w.indexOf(w)<0)o.w.push(w)}
+  allDes().forEach(function(x){add(x[1],"categoria de lançamento")});
+  contas.forEach(function(c){add(c.nome,"Despesas (casa)")});
+  venc.forEach(function(v){add(v.nome,v.cat==="R"?"Reservas":"Custos anuais")});
+  return Object.keys(mp).map(function(k){return mp[k]}).filter(function(x){return x.c>1});
+}
+function renderDup(){
+  var d=duplicidades(),el=$("gcdup");
+  if(!d.length){el.style.display="none";return}
+  el.style.display="";
+  el.innerHTML='<h3>⚠️ Possível duplicidade</h3>'+d.map(function(x){return '<div style="font-size:13px;line-height:1.5;margin:6px 0"><b>'+esc(x.n)+'</b> aparece '+(x.w.length>1?'em: '+x.w.map(esc).join(" e "):'mais de uma vez em '+esc(x.w[0]))+'.</div>'}).join("")+'<div style="font-size:12px;color:var(--mut);line-height:1.4">Mantenha cada custo em um só lugar (veja as regras abaixo) e exclua ou renomeie o repetido.</div>';
+}
 function lancDia(d){var t=0;dados.forEach(function(e){if(e.data===d&&!isR(e.tipo))t+=e.valor});return t}
 function recDia(d){var t=0;dados.forEach(function(e){if(e.data===d&&isR(e.tipo))t+=e.valor});return t}
 function lancMes(m){var t=0;dados.forEach(function(e){if(e.data.slice(0,7)===m&&!isR(e.tipo))t+=e.valor});return t}
-function metaDiaD(d){var m=d.slice(0,7),b=metaDiaBase(),cd=Math.max(prevDiario(),lancDia(d)),ar=impDia(m);return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
-function metaMesM(m){var b=metaMesBase(),cd=Math.max(prevDiario()*diasTrab(),lancMes(m)),ar=impModo()==="trab"?reservasMes(m):impDia(m)*diasTrab();return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
+function nomeNorm(n){return String(n).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function lancCatD(d){var o={};dados.forEach(function(e){if(e.data===d&&!isR(e.tipo))o[e.tipo]=(o[e.tipo]||0)+e.valor});return o}
+function custoDiaDet(d){
+  var lan=lancCatD(d),nm={},tot=0,it=[];
+  Object.keys(catPrev).forEach(function(k){if(+catPrev[k]>0)nm[k]=1});Object.keys(lan).forEach(function(k){nm[k]=1});
+  Object.keys(nm).forEach(function(n){var p=+catPrev[n]||0,l=lan[n]||0,u=Math.max(p,l);tot+=u;it.push({n:n,p:p,l:l,u:u})});
+  it.sort(function(a,b){return b.u-a.u});return {tot:tot,it:it};
+}
+function custoMesDet(m){
+  var lan={},nm={},tot=0;
+  dados.forEach(function(e){if(e.data.slice(0,7)===m&&!isR(e.tipo))lan[e.tipo]=(lan[e.tipo]||0)+e.valor});
+  Object.keys(catPrev).forEach(function(k){if(+catPrev[k]>0)nm[k]=1});Object.keys(lan).forEach(function(k){nm[k]=1});
+  Object.keys(nm).forEach(function(n){tot+=Math.max((+catPrev[n]||0)*diasTrab(),lan[n]||0)});
+  return tot;
+}
+function metaDiaD(d){var m=d.slice(0,7),b=metaDiaBase(),cd=custoDiaDet(d).tot,ar=impDia(m);return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
+function metaMesM(m){var b=metaMesBase(),cd=custoMesDet(m),ar=impModo()==="trab"?reservasMes(m):impDia(m)*diasTrab();return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
 function metaMes(){return metaMesM(mk()).total}
 function metaDiaBase(){return meta.dias>0&&meta.mes>0?meta.mes/meta.dias:(meta.dia||0)}
 function metaDia(){return metaDiaD(hoje()).total}
@@ -1256,7 +1304,7 @@ function renderImp(){
   if(!n)h='<div style="font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:6px">Nenhum custo anual ou reserva sendo diluído neste mês.</div>';
   var md=metaDiaD(hd),mm=metaMesM(hm);
   h+='<div style="border-top:1px solid var(--bd);margin-top:6px"></div>'+kv("Sua meta por dia (base)",brl(md.base))+kv("+ Custos do dia",brl(md.cd))+kv("+ Custos anuais e reservas (valor do dia)",brl(md.ar))+kv("= Meta de hoje",brl(md.total),"ok")+kv("Meta do mês",brl(mm.total));
-  h+='<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4">Custos do dia: o maior valor entre o previsto por dia e o que você já lançou hoje, inteiro, sem diluir. '+(modo==="trab"?"Anuais e reservas: parcela do mês ÷ "+dt+" dias trabalhados.":"Anuais e reservas: parcela do mês ÷ "+dm+" dias do mês.")+' A meta compara com as receitas do dia.</div>';
+  h+='<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4">Custos do dia: por categoria, o maior valor entre o previsto e o que você lançou hoje, inteiro e sem somar os dois. '+(modo==="trab"?"Anuais e reservas: parcela do mês ÷ "+dt+" dias trabalhados.":"Anuais e reservas: parcela do mês ÷ "+dm+" dias do mês.")+' A meta compara com as receitas do dia.</div>';
   if(fut.length)h+='<div style="font-size:12px;color:var(--mut);margin-top:8px;line-height:1.4">Próximos a entrar na meta: '+fut.join(" · ")+'.</div>';
   if(fora.length)h+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Fora da meta (opção desmarcada): '+fora.map(esc).join(", ")+'.</div>';
   $("impres").innerHTML=h;
@@ -1647,7 +1695,7 @@ function render(){
     '<div class="kv"><span>Ganho por hora</span><b>'+(hs>0?brl(r/hs):"-")+'</b></div>'+
     '<div class="kv"><span>Lucro por hora</span><b>'+(hs>0?brl(s/hs):"-")+'</b></div>'+
     '<div class="kv"><span>Corridas</span><b>'+(ncs>0?ncs:"-")+'</b></div><div class="kv"><span>Ganho por corrida</span><b>'+(ncs>0?brl(r/ncs):"-")+'</b></div>'+(function(){var mm=metaMesM(m);if(!(mm.total>0))return '';var f=mm.total-r;return '<div class="kv"><span>Meta do mês</span><b>'+brl(mm.total)+'</b></div><div class="kv"><span>'+(f>0.004?'Falta para a meta':'Meta batida (acima)')+'</span><b class="'+(f>0.004?'bad':'ok')+'">'+brl(Math.abs(f))+'</b></div>'})();
-  metasUI(s,m,r);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderCD();renderGcSum();renderImp();renderPd();odoInfo();renderTurno();
+  metasUI(s,m,r);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderCD();renderGcSum();renderDup();renderImp();renderPd();odoInfo();renderTurno();
   $("reprap").style.display=dados.length?"block":"none";$("reprap").textContent=repTxt();
 }
 
@@ -1705,6 +1753,9 @@ function updDel(){
   var ok=modo==="r"?customRec.indexOf(cat)>=0:custom.indexOf(cat)>=0;
   $("delcat").style.display=ok?"block":"none";
   $("fuelWrap").style.display=(modo==="d"&&cat==="Abastecimento")?"":"none";
+  var dh="";
+  if(modo==="d"){var pp=+catPrev[cat]||0,ll=lancCatD($("data").value||hoje())[cat]||0;if(pp>0||ll>0)dh="Neste dia em "+info(cat)[1]+": previsto "+brl(pp)+" · lançado "+brl(ll)+". A meta do dia usa o maior dos dois, sem somar."}
+  $("cathint").style.display=dh?"block":"none";$("cathint").textContent=dh;
 }
 function ultimo(){return dados.length?dados.slice().sort(function(a,b){return b.id-a.id})[0]:null}
 function repTxt(){var u=ultimo();return u?"🔁 Repetir último: "+info(u.tipo)[1]+" "+brl(u.valor):""}
@@ -1714,9 +1765,9 @@ function fillRep(){
   $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("ncor").value="";$("obs").value="";$("flit").value=u.l||"";$("fodo").value="";
   $("err").textContent="";toast("🔁 Último lançamento copiado. Ajuste o que precisar e salve.");
 }
-var editId=null,exArm=false;
+var editId=null,exArm=false,dupOk=false;
 function abrir(e){
-  editId=e?e.id:null;exArm=false;
+  editId=e?e.id:null;exArm=false;dupOk=false;
   $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
   $("err").textContent="";$("sv").textContent=e?"Salvar alterações":"Salvar";
   $("ex").style.display=e?"block":"none";$("ex").textContent="Excluir lançamento";
@@ -1727,6 +1778,7 @@ function abrir(e){
 function fechar(){$("ov").className="";editId=null}
 
 $("fab").onclick=function(){abrir()};$("cx").onclick=fechar;
+$("data").onchange=function(){updDel()};
 $("ov").onclick=function(e){if(e.target===$("ov"))fechar()};
 $("tr").onclick=function(){setModo("r")};$("td").onclick=function(){setModo("d")};
 $("chips").onchange=function(e){
@@ -1737,7 +1789,8 @@ $("chips").onchange=function(e){
 $("novaOk").onclick=function(){
   var n=$("novaIn").value.trim().replace(/\s+/g," ");
   if(!n)return;
-  var ex=allRec().concat(allDes()).filter(function(x){return x[1].toLowerCase()===n.toLowerCase()})[0];
+  var ex=allRec().concat(allDes()).filter(function(x){return nomeNorm(x[1])===nomeNorm(n)})[0];
+  if(!ex){var ot=nomeOnde(n);if(ot){$("err").textContent=nomeAviso(n,ot);return}}
   if(ex){cat=ex[0]}else{if(modo==="r")customRec.push(n);else custom.push(n);var iv=$("icown").value.trim()||$("icsel").value;recIc[n]=cleanIc(iv);saveCats();cat=n}
   chips();
 };
@@ -1792,6 +1845,7 @@ $("sv").onclick=function(){
   var v=parseFloat($("valor").value);
   if(!(v>0)){$("err").textContent="Digite um valor maior que zero.";return}
   var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",nc=modo==="r"?Math.max(0,parseInt($("ncor").value)||0):0,ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
+  if(!editId&&modo==="d"&&!dupOk&&dados.some(function(x){return x.data===d&&x.tipo===cat&&!isR(x.tipo)&&Math.abs(x.valor-v)<0.005})){dupOk=true;$("err").textContent="Já existe um lançamento igual neste dia ("+info(cat)[1]+" "+brl(v)+"). Toque em Salvar de novo se for outro gasto.";return}
   if(editId){
     var e=dados.filter(function(x){return x.id===editId})[0];
     if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.nc=nc;e.l=lit;e.o=od;if(modo==="d")e.ob=ob;e.data=d}
@@ -1825,7 +1879,7 @@ $("vcx").onclick=vReset;
 $("vadd").onclick=function(){
   var nome=$("vsel").value==="__outro"?$("vn2").value.trim():$("vsel").value,dt=$("vdata").value;
   if(!nome||!dt){toast("Informe o nome e a data do prazo");return}
-  if(!vedit&&venc.some(function(x){return (x.cat==="R")===(vcat==="R")&&String(x.nome).trim().toLowerCase()===nome.trim().toLowerCase()})){toast("Já existe \""+nome+"\" aqui. Toque no ✏️ para editar.");return}
+  var ot=nomeOnde(nome,{venc:vedit});if(ot){toast(nomeAviso(nome,ot));return}
   var av=Math.min(365,Math.max(1,parseInt($("vavisa").value)||30)),it={id:vedit||Date.now(),nome:nome.slice(0,30),data:dt,aviso:av},old=vedit?venc.filter(function(x){return x.id===vedit})[0]:null;
   if($("vcalc").checked){
     var t=parseFloat($("vtot").value)||0,d=parseInt($("vdias").value)||0;
@@ -1869,8 +1923,7 @@ $("cdlist").onclick=function(e){var r=e.target.closest("[data-cd]");if(r)abrirS8
 $("cdi").onclick=function(){icAbre(function(i){cdIcone=cleanIc(i);$("cdip").textContent=cdIcone})};
 $("cdadd").onclick=function(){
   var n=$("cdn").value.trim().replace(/\s+/g," ");if(!n){toast("Informe o nome do custo");return}
-  var ex=allRec().concat(allDes()).filter(function(x){return x[1].toLowerCase()===n.toLowerCase()})[0];
-  if(ex){toast("Já existe um item com esse nome");return}
+  var ot=nomeOnde(n);if(ot){toast(nomeAviso(n,ot));return}
   var pv=parseFloat($("cdp").value)||0;
   custom.push(n);recIc[n]=cleanIc(cdIcone);if(pv>0)catPrev[n]=r2(pv);
   $("cdn").value="";$("cdp").value="";cdIcone="🏷️";$("cdip").textContent=cdIcone;
@@ -1918,8 +1971,7 @@ $("ov6").onclick=function(e){if(e.target===$("ov6"))$("ov6").className=""};
 $("d6ok").onclick=function(){
   var nome=$("d6n").value.trim();
   if(!nome){$("d6e").textContent="Informe o nome da despesa.";return}
-  var dup=contas.filter(function(x){return String(x.id)!==String(d6.id)&&x.nome.toLowerCase()===nome.toLowerCase()})[0];
-  if(dup){$("d6e").textContent="Já existe uma despesa com esse nome.";return}
+  var ot=nomeOnde(nome,{conta:d6.id});if(ot){$("d6e").textContent=nomeAviso(nome,ot);return}
   var vs=$("d6v").value.trim(),v=vs===""?null:parseFloat(vs);
   if(v!==null&&!(v>=0)){$("d6e").textContent="Informe um valor válido.";return}
   var dia=parseInt($("d6d").value)||0;dia=dia>=1&&dia<=31?dia:0;
@@ -1987,8 +2039,7 @@ $("clist").onclick=function(ev){
 $("cok").onclick=function(){
   var n=$("cin").value.trim().replace(/\s+/g," ");if(!n||ceOld===null)return;
   var arr=ceOld[0]==="r"?customRec:custom,ix=+ceOld.slice(1),old=arr[ix];
-  var ex=allRec().concat(allDes()).filter(function(x){return x[1].toLowerCase()===n.toLowerCase()&&x[0]!==old})[0];
-  if(ex){setSync("⚠️ Já existe um item com esse nome");return}
+  var ot=nomeOnde(n,{cat:old});if(ot){setSync("⚠️ "+nomeAviso(n,ot));return}
   var ms=[];dados.forEach(function(x){if(x.tipo===old){x.tipo=n;ms.push(x.data.slice(0,7))}});
   if(recIc[old]){recIc[n]=recIc[old];delete recIc[old]}
   if(catPrev[old]!=null){catPrev[n]=catPrev[old];delete catPrev[old]}
