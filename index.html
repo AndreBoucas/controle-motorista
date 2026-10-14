@@ -28,6 +28,7 @@ header{background:var(--hd);color:#fff;padding:14px 16px 64px;border-radius:0 0 
 .saldo div{font-size:34px;font-weight:800;margin-top:2px}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-40px 14px 12px}
 .duo.d2{margin:0 14px 12px}
+.diasel{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 14px 8px;font-size:13px;font-weight:700}.diasel button{width:30px;height:30px;border-radius:50%;border:0;background:var(--card);color:var(--tx);font-size:16px;box-shadow:0 1px 4px rgba(0,0,0,.12)}.diasel #diatxt{min-width:170px;text-align:center;text-transform:capitalize}.diasel #diahoje{width:auto;height:26px;border-radius:13px;padding:0 10px;font-size:12px;font-weight:700;color:var(--hd)}
 .duo .box{padding:11px 10px;gap:8px}.duo .box .ic{width:30px;height:30px;font-size:14px}.duo .box small{white-space:nowrap}.duo .box>div:last-child{min-width:0}
 .box{background:var(--card);border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;gap:10px;align-items:center}
 .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:16px;flex:none}
@@ -126,6 +127,7 @@ nav button.on b{font-weight:800}
   <div class="box"><div class="ic" style="background:rgba(0,168,107,.15)">⬆️</div><div><small>Receitas · Mensal</small><b class="ok" id="rec">R$ 0,00</b></div></div>
   <div class="box"><div class="ic" style="background:rgba(229,72,77,.15)">⬇️</div><div><small>Despesas · Mensal</small><b class="bad" id="des">R$ 0,00</b></div></div>
 </div>
+<div class="diasel"><button id="diaant" aria-label="Dia anterior">‹</button><span id="diatxt"></span><button id="diaprox" aria-label="Próximo dia">›</button><button id="diahoje" style="display:none">Hoje</button></div>
 <div class="duo d2">
   <div class="box"><div class="ic" style="background:rgba(0,168,107,.15)">⬆️</div><div><small>Receitas · Do dia</small><b class="ok" id="recD">R$ 0,00</b></div></div>
   <div class="box"><div class="ic" style="background:rgba(229,72,77,.15)">⬇️</div><div><small>Despesas · Do dia</small><b class="bad" id="desD">R$ 0,00</b></div></div>
@@ -206,7 +208,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 21/10/2026 · v43</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 22/10/2026 · v44</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -1205,6 +1207,7 @@ function pdChart(arr,mt,goal){
 }
 function renderPd(){
   var m=mk(),arr=pdDados(m),hm=hoje(),goal=metaDiaBase()+impDia(m),goalR=goal+prevDiario();
+  if(diaSel&&diaSel.slice(0,7)===m)pdDia=diaSel;
   if(!pdDia||pdDia.slice(0,7)!==m){
     if(hm.slice(0,7)===m)pdDia=hm;
     else{var u=null;arr.forEach(function(x){if(x.r||x.s)u=x.d});pdDia=u||arr[0].d}
@@ -1233,7 +1236,7 @@ function renderPd(){
   $("pddes").innerHTML=grp(pd,x.s,"var(--bad)","Despesas por categoria");
   if(!Object.keys(pr).length&&!Object.keys(pd).length)$("pdrec").innerHTML='<div style="font-size:13px;color:var(--mut);margin-top:10px">Nenhum lançamento neste dia.</div>';
 }
-var catPrev={},vcat="A",gcTab="D",cdIcone="🏷️",s8={};
+var diaSel=null,catPrev={},vcat="A",gcTab="D",cdIcone="🏷️",s8={};
 function perfilLimpa(o){o=o&&typeof o==="object"?o:{};return {nome:String(o.nome||"").slice(0,40),veic:String(o.veic||"").slice(0,40),placa:String(o.placa||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),odo:Math.max(0,Math.round(+o.odo||0)),odoTs:Math.max(0,Math.round(+o.odoTs||0))}}
 function fillPerfil(){$("cnome").value=perfil.nome;$("cveic").value=perfil.veic;$("cplaca").value=perfil.placa;$("codo").value=odoAtual()!==null?Math.round(odoAtual()):"";odoInfo()}
 function perfilUI(){
@@ -1363,12 +1366,12 @@ function metasUI(s,m,rec){
     ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Sua meta '+brl(mm.base)+' + custos diários '+brl(mm.cd)+' + anuais e reservas '+brl(mm.ar)+' = '+brl(gm)+'.</div><div style="font-size:12px;color:var(--mut);margin-top:2px">Lucro do mês: '+brl(s)+' (receitas − despesas lançadas).</div>';
     h+=barra("Meta do mês"+(meta.dias>0?" · "+trab+"/"+meta.dias+" dias":""),rec,gm,ex);
   }
-  if(metaDia()>0&&m===hoje().slice(0,7)){
-    var hd=hoje(),md=metaDiaD(hd),rd=recDia(hd),ld=rd-lancDia(hd),fd=md.total-rd,exh;
+  if(metaDiaD(diaSel).total>0){
+    var hd=diaSel,md=metaDiaD(hd),rd=recDia(hd),ld=rd-lancDia(hd),fd=md.total-rd,exh;
     exh='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px">'+(fd>0.004?'<b style="color:var(--bad)">Falta '+brl(fd)+'</b>':'<b style="color:var(--ok)">✅ Meta do dia batida!</b>')+'<span style="color:var(--mut)">'+Math.round(rd/md.total*100)+'%</span></div>';
-    exh+=difLinha("Custos de hoje",custoDiaDet(hd));
+    exh+=difLinha(hd===hoje()?"Custos de hoje":"Custos do dia",custoDiaDet(hd));
     exh+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Sua meta '+brl(md.base)+' + custos do dia '+brl(md.cd)+' + anuais e reservas '+brl(md.ar)+' = '+brl(md.total)+'.</div><div style="font-size:12px;color:var(--mut);margin-top:2px">Lucro do dia: '+brl(ld)+' (receitas − custos lançados).</div>';
-    h+=barra("Meta de hoje",rd,md.total,exh);
+    h+=barra(hd===hoje()?"Meta de hoje":"Meta do dia "+fmtBR(hd).slice(0,5),rd,md.total,exh);
   }
   var al=[];
   manut.forEach(function(x){var r=restam(x);if(r<=300)al.push('🔧 '+esc(x.nome)+': '+(r>0?'faltam '+Math.round(r)+' km':'atrasada '+Math.round(-r)+' km'))});
@@ -1688,7 +1691,20 @@ function arqUI(){
   if(!arqH){t.textContent="Escolha um arquivo (por exemplo, em Documentos ou Downloads). O app o atualiza sozinho a cada mudança, e ele continua lá mesmo se você limpar os dados do navegador.";on.textContent="Escolher arquivo";off.style.display="none"}
   else{t.textContent=arqEst==="ok"?"✅ Ativo. O arquivo \""+(arqH.name||"backup")+"\" é atualizado a cada mudança.":arqEst==="erro"?"⚠️ Não foi possível gravar no arquivo. Toque em Reativar.":"O navegador pede sua permissão de novo a cada vez que o app é aberto. Toque em Reativar.";on.textContent=arqEst==="ok"?"Trocar arquivo":"Reativar";off.style.display="block"}
 }
+function ajustaDia(){
+  var m=mk();
+  if(diaSel&&diaSel.slice(0,7)===m)return;
+  var hm=hoje();
+  if(hm.slice(0,7)===m){diaSel=hm;return}
+  var dn=diaSel?+diaSel.slice(8,10):1;diaSel=m+"-"+p2(Math.min(dn,diasDoMes(m)));
+}
+function moveDia(n){
+  ajustaDia();var p=diaSel.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+n);diaSel=iso(d);
+  var m=diaSel.slice(0,7);if(m!==mk())cur=new Date(+m.slice(0,4),+m.slice(5,7)-1,1);
+  render();
+}
 function render(){
+  ajustaDia();
   fuelInfo=fuelCalc().map;
   var m=mk(),r=0,d=0,k=0,por={},hs=0,ncs=0,its=[],cats={};
   $("mtxt").textContent=cur.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
@@ -1699,7 +1715,10 @@ function render(){
     else{d+=e.valor;cats[e.tipo]=(cats[e.tipo]||0)+e.valor}
   });
   var s=r-d;
-  $("saldo").textContent=brl(s);$("rec").textContent=brl(r);$("des").textContent=brl(d);$("recD").textContent=brl(recDia(hoje()));$("desD").textContent=brl(lancDia(hoje()));
+  $("saldo").textContent=brl(s);$("rec").textContent=brl(r);$("des").textContent=brl(d);$("recD").textContent=brl(recDia(diaSel));$("desD").textContent=brl(lancDia(diaSel));
+  var dp=diaSel.split("-"),eh=diaSel===hoje();
+  $("diatxt").textContent=SEM[new Date(+dp[0],+dp[1]-1,+dp[2]).getDay()]+", "+dp[2]+"/"+dp[1]+"/"+dp[0]+(eh?" (hoje)":"");
+  $("diahoje").style.display=eh?"none":"";
   var mes=its.slice();its=its.filter(function(e){return fil==="todos"||e.tipo===fil||(fil==="__d"&&!isR(e.tipo))});
   its.sort(function(a,b){return b.data.localeCompare(a.data)||b.id-a.id});
   var h="",ult="";
@@ -2043,9 +2062,11 @@ $("gav").onclick=function(e){if(e.target===$("gav")){gavFecha();return}var b=e.t
 $("menucard").onclick=function(e){var b=e.target.closest("[data-mm]");if(!b)return;menuModo=b.getAttribute("data-mm");try{localStorage.setItem("motorista_menu",menuModo)}catch(x){}aplicaMenu();toast("🧭 Menu: "+b.querySelector("b").textContent.replace(" (recomendado)",""))};
 $("mmes").oninput=$("mdias").oninput=metaUI;
 $("pdtab").onclick=function(e){var b=e.target.closest("[data-pm]");if(!b)return;pdM=b.getAttribute("data-pm");renderPd()};
-$("pdchart").onclick=function(e){var r=e.target.closest("[data-pd]");if(!r)return;pdDia=r.getAttribute("data-pd");renderPd()};
-$("pdant").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]-1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);renderPd()}};
-$("pdprox").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);renderPd()}};
+$("pdchart").onclick=function(e){var r=e.target.closest("[data-pd]");if(!r)return;pdDia=r.getAttribute("data-pd");diaSel=pdDia;render()};
+$("diaant").onclick=function(){moveDia(-1)};$("diaprox").onclick=function(){moveDia(1)};
+$("diahoje").onclick=function(){diaSel=hoje();cur=new Date(+diaSel.slice(0,4),+diaSel.slice(5,7)-1,1);render()};
+$("pdant").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]-1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);diaSel=pdDia;render()}};
+$("pdprox").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);diaSel=pdDia;render()}};
 $("impdiv").onchange=function(){meta=Object.assign({},meta,{impdiv:this.value==="trab"?"trab":undefined});saveCats();render();toast("✅ Impostos: "+(this.value==="trab"?"reserva completa":"só o valor do dia"))};
 $("msv").onclick=function(){
   var d=Math.min(31,Math.max(0,parseInt($("mdias").value)||0));
