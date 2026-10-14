@@ -152,7 +152,12 @@ nav button.on b{font-weight:800}
 <div id="p3" style="display:none">
   <div class="st"><h3>Metas de lucro</h3>
     <div class="two2"><div><label>Meta do mês (R$)</label><input id="mmes" type="number" inputmode="decimal"></div>
-    <div><label>Dias trabalhados no mês</label><input id="mdias" type="number" inputmode="numeric" min="1" max="31" placeholder="Ex: 22"></div></div>
+    <div><label>Dias de trabalho por mês</label><input id="mdias" type="number" inputmode="numeric" min="1" max="31" placeholder="Ex: 22"></div></div>
+    <div id="mmeswrap" style="display:none">
+      <div id="mini" style="font-size:12px;color:var(--tx);background:var(--in);border-radius:10px;padding:10px;line-height:1.5;margin-top:8px"></div>
+      <div class="two2"><div><label>Dias de trabalho neste mês</label><input id="mdiasat" type="number" inputmode="numeric" min="1" placeholder="Restantes"></div>
+      <div><label>No mês atual</label><select id="mprop" class="fsel"><option value="0">Meta cheia nos dias restantes</option><option value="1">Proporcional aos dias restantes</option></select></div></div>
+    </div>
     <label>Meta por dia (R$)</label><input id="mdia" type="number" inputmode="decimal">
     <div id="mhint" style="font-size:12px;color:var(--mut);margin-top:6px;line-height:1.4"></div>
     <div id="fatnec" style="margin-top:10px"></div>
@@ -208,7 +213,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 22/10/2026 · v44</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 23/10/2026 · v45</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -796,7 +801,7 @@ function vCalcUI(){
   if(dt&&pl.length){var ate=0;pl.forEach(function(x){if(x.m<=dt.slice(0,7))ate+=x.valor});if(ate<tp-0.005)aviso=" O vencimento é antes do fim do período: até lá você terá separado "+brl(r2(ate))+" de "+brl(r2(tp))+"."}
   $("vplan").textContent=pl.length?"Reservas: "+pl.map(function(x){return mesTxt(x.m).replace(/ de .*/,"").slice(0,3)+" "+brl(x.valor)+(emb?" (+ "+brl(impDiaV(x.valor,x.m))+"/dia)":"")}).join(" · ")+" — total "+brl(r2(tp))+aviso:"";
 }
-function impDiaV(valor,m){return impModo()==="trab"?valor/diasTrab():valor/diasDoMes(m)}
+function impDiaV(valor,m){return impModo()==="trab"?valor/diasTrab(m):valor/diasDoMes(m)}
 function vMetaTxt(v){
   if(v.emb===false)return "fora da meta";
   var pl=planoReserva(v),hm=hoje().slice(0,7),x=pl.filter(function(p){return p.m===hm})[0];
@@ -1206,7 +1211,7 @@ function pdChart(arr,mt,goal){
   return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block">'+h+'</svg>';
 }
 function renderPd(){
-  var m=mk(),arr=pdDados(m),hm=hoje(),goal=metaDiaBase()+impDia(m),goalR=goal+prevDiario();
+  var m=mk(),arr=pdDados(m),hm=hoje(),goal=metaDiaBase(m)+impDia(m),goalR=goal+prevDiario();
   if(diaSel&&diaSel.slice(0,7)===m)pdDia=diaSel;
   if(!pdDia||pdDia.slice(0,7)!==m){
     if(hm.slice(0,7)===m)pdDia=hm;
@@ -1250,11 +1255,23 @@ function addMeses(d,n){var y=d.getFullYear(),m=d.getMonth()+n,ult=new Date(y,m+1
 function ini0(dt,jan){var w=addMeses(dIso(dt),-jan),h=dIso(hoje());return iso(w>h?w:h)}
 function diasEntre(a,b){return Math.round((dIso(b)-dIso(a))/86400000)}
 function reservasMes(m){var t=0;venc.forEach(function(v){if(v.emb===false)return;planoReserva(v).forEach(function(x){if(x.m===m)t+=x.valor})});return t}
-function diasTrab(){return meta.dias>0?meta.dias:22}
-function metaMesBase(){return meta.mes||0}
+function restDias(iso0){return diasDoMes(iso0.slice(0,7))-(+iso0.slice(8,10))+1}
+function ehMesIni(m){return !!(meta.ini&&meta.ini.slice(0,7)===m&&+meta.ini.slice(8,10)>1&&meta.dias>0)}
+function desdeIni(m){return ehMesIni(m)?meta.ini:"0000-00-00"}
+function diasTrab(m){
+  m=m||hoje().slice(0,7);
+  if(ehMesIni(m)){
+    var rs=restDias(meta.ini),da=meta.diasAt>0?meta.diasAt:Math.round(meta.dias*rs/diasDoMes(m));
+    return Math.max(1,Math.min(da,rs,meta.dias));
+  }
+  return meta.dias>0?meta.dias:22;
+}
+function recMesMeta(m){var f=desdeIni(m),t=0;dados.forEach(function(e){if(e.data.slice(0,7)===m&&e.data>=f&&isR(e.tipo))t+=e.valor});return t}
+function lancMesMeta(m){var f=desdeIni(m),t=0;dados.forEach(function(e){if(e.data.slice(0,7)===m&&e.data>=f&&!isR(e.tipo))t+=e.valor});return t}
+function metaMesBase(m){m=m||hoje().slice(0,7);if(ehMesIni(m)&&meta.prop)return (meta.mes||0)*diasTrab(m)/meta.dias;return meta.mes||0}
 function diasDoMes(m){return new Date(+m.slice(0,4),+m.slice(5,7),0).getDate()}
 function impModo(){return meta.impdiv==="trab"?"trab":"mes"}
-function impDia(m){var r=reservasMes(m);return impModo()==="trab"?r/diasTrab():r/diasDoMes(m)}
+function impDia(m){var r=reservasMes(m);return impModo()==="trab"?r/diasTrab(m):r/diasDoMes(m)}
 function nomeOnde(n,ign){
   var k=nomeNorm(n);ign=ign||{};
   if(allRec().concat(allDes()).some(function(x){return nomeNorm(x[1])===k&&x[0]!==ign.cat}))return "uma categoria de lançamento";
@@ -1295,7 +1312,7 @@ function custoDiaDet(d){
 }
 function custoMesDif(m){
   var lan={},dr={},dif=0,has=false,vp=0,vl=0;
-  dados.forEach(function(e){if(e.data.slice(0,7)!==m)return;if(isR(e.tipo))dr[e.data]=1;else lan[e.tipo]=(lan[e.tipo]||0)+e.valor});
+  dados.forEach(function(e){if(e.data.slice(0,7)!==m||e.data<desdeIni(m))return;if(isR(e.tipo))dr[e.data]=1;else lan[e.tipo]=(lan[e.tipo]||0)+e.valor});
   var n=Object.keys(dr).length;
   if(n>0)Object.keys(catPrev).forEach(function(k){var p=+catPrev[k]||0,l=lan[k]||0;if(p>0&&l>0){dif+=r2(p*n-l);has=true;vp+=p*n;vl+=l}});
   return {dif:r2(dif),has:has,n:n,vp:vp,vl:vl};
@@ -1312,15 +1329,15 @@ function difKV(rot,c){
 }
 function custoMesDet(m){
   var lan={},nm={},tot=0;
-  dados.forEach(function(e){if(e.data.slice(0,7)===m&&!isR(e.tipo))lan[e.tipo]=(lan[e.tipo]||0)+e.valor});
+  dados.forEach(function(e){if(e.data.slice(0,7)===m&&e.data>=desdeIni(m)&&!isR(e.tipo))lan[e.tipo]=(lan[e.tipo]||0)+e.valor});
   Object.keys(catPrev).forEach(function(k){if(+catPrev[k]>0)nm[k]=1});Object.keys(lan).forEach(function(k){nm[k]=1});
-  Object.keys(nm).forEach(function(n){tot+=Math.max((+catPrev[n]||0)*diasTrab(),lan[n]||0)});
+  Object.keys(nm).forEach(function(n){tot+=Math.max((+catPrev[n]||0)*diasTrab(m),lan[n]||0)});
   return tot;
 }
-function metaDiaD(d){var m=d.slice(0,7),b=metaDiaBase(),cd=custoDiaDet(d).tot,ar=impDia(m);return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
-function metaMesM(m){var b=metaMesBase(),cd=custoMesDet(m),ar=impModo()==="trab"?reservasMes(m):impDia(m)*diasTrab();return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
+function metaDiaD(d){var m=d.slice(0,7),b=metaDiaBase(m),cd=custoDiaDet(d).tot,ar=impDia(m);return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
+function metaMesM(m){var b=metaMesBase(m),cd=custoMesDet(m),ar=impModo()==="trab"?reservasMes(m):impDia(m)*diasTrab(m);return {base:b,cd:cd,ar:ar,total:b+cd+ar}}
 function metaMes(){return metaMesM(mk()).total}
-function metaDiaBase(){return meta.dias>0&&meta.mes>0?meta.mes/meta.dias:(meta.dia||0)}
+function metaDiaBase(m){m=m||hoje().slice(0,7);return meta.dias>0&&meta.mes>0?metaMesBase(m)/diasTrab(m):(meta.dia||0)}
 function metaDia(){return metaDiaD(hoje()).total}
 function renderImp(){
   var hd=hoje(),hm=hd.slice(0,7),dm=diasDoMes(hm),dt=diasTrab(),modo=impModo(),dv=modo==="trab"?dt:dm,h="",tot=0,fut=[],fora=[],n=0;
@@ -1340,31 +1357,53 @@ function renderImp(){
   if(fora.length)h+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Fora da meta (opção desmarcada): '+fora.map(esc).join(", ")+'.</div>';
   $("impres").innerHTML=h;
 }
+var mAtMan=false;
 function metaUI(){
-  var m=parseFloat($("mmes").value)||0,d=parseInt($("mdias").value)||0,auto=m>0&&d>0;
-  $("mdia").disabled=auto;
-  if(auto)$("mdia").value=Math.round(m/d*100)/100;
-  $("mhint").textContent=auto?"Meta por dia calculada: "+brl(m/d)+" ("+brl(m)+" ÷ "+d+" dias trabalhados).":"Informe a meta do mês e os dias trabalhados para a meta por dia ser calculada automaticamente. Sem os dias, digite a meta por dia.";
+  var hm=hoje(),dia=+hm.slice(8,10),dm=diasDoMes(hm.slice(0,7)),rs=dm-dia+1,mes=parseFloat($("mmes").value)||0,d=parseInt($("mdias").value)||0,auto=mes>0&&d>0;
+  var ini0=(meta.ini&&meta.ini.slice(0,7)===hm.slice(0,7)&&meta.mes>0)?meta.ini:hm,dia0=+ini0.slice(8,10),rs0=dm-dia0+1,mid=dia0>1&&d>0;
+  $("mdia").disabled=auto;if(auto)$("mdia").value=r2(mes/d);
+  $("mmeswrap").style.display=mid?"":"none";
+  var mx=Math.max(1,Math.min(rs0,d||rs0)),da=0;
+  if(mid){
+    $("mdiasat").max=mx;
+    if(!mAtMan||!(parseInt($("mdiasat").value)>0))$("mdiasat").value=Math.max(1,Math.min(mx,Math.round(d*rs0/dm)));
+    da=parseInt($("mdiasat").value)||0;
+    $("mini").innerHTML='📅 A meta começa em <b>'+fmtBR(ini0)+'</b> (data do aparelho). Restam <b>'+rs0+' dias</b> neste mês, contando esse dia. Você pode trabalhar no máximo <b>'+mx+' dias</b> neste mês.';
+  }
+  var t="";
+  if(d>dm)t="⚠️ Este mês tem "+dm+" dias: os dias de trabalho por mês não podem passar de "+dm+".";
+  else if(auto){
+    t="Meses cheios: "+brl(mes)+" ÷ "+d+" dias = "+brl(mes/d)+" por dia.";
+    if(mid&&da>0)t+=$("mprop").value==="1"?" Mês atual: meta proporcional "+brl(mes*da/d)+" em "+da+" dias = "+brl(mes/d)+" por dia.":" Mês atual: "+brl(mes)+" ÷ "+da+" dias restantes = "+brl(mes/da)+" por dia.";
+  }else t="Informe a meta do mês e os dias de trabalho para a meta por dia ser calculada automaticamente. Sem os dias, digite a meta por dia.";
+  $("mhint").textContent=t;
 }
-function fillMeta(){$("mmes").value=meta.mes||"";$("mdias").value=meta.dias||"";$("mdia").value=meta.dias>0&&metaMesBase()>0?Math.round(metaMesBase()/meta.dias*100)/100:(meta.dia||"");metaUI()}
+function fillMeta(){
+  $("mmes").value=meta.mes||"";$("mdias").value=meta.dias||"";
+  $("mdia").value=meta.dias>0&&meta.mes>0?r2(meta.mes/meta.dias):(meta.dia||"");
+  if(meta.ini&&meta.ini.slice(0,7)===hoje().slice(0,7)&&meta.diasAt>0){$("mdiasat").value=meta.diasAt;mAtMan=true}else{$("mdiasat").value="";mAtMan=false}
+  $("mprop").value=meta.prop?"1":"0";
+  metaUI();
+}
 function barra(t,v,g,ex){var pc=Math.max(0,Math.min(100,v/g*100));return '<div class="st" style="padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;gap:8px"><span>'+t+'</span><b>'+brl(v)+' / '+brl(g)+'</b></div><div class="pg" style="margin-top:8px"><i style="width:'+pc+'%"></i></div>'+(ex||'')+'</div>'}
 function metasUI(s,m,rec){
-  var h="";
+  var h="";rec=recMesMeta(m);s=rec-lancMesMeta(m);
   if(metaMes()>0){
-    var dt={};dados.forEach(function(e){if(e.data.slice(0,7)===m&&isR(e.tipo))dt[e.data]=1});
+    var dt={};dados.forEach(function(e){if(e.data.slice(0,7)===m&&e.data>=desdeIni(m)&&isR(e.tipo))dt[e.data]=1});
     var mm=metaMesM(m),gm=mm.total,falta=gm-rec,pct=Math.max(0,Math.round(rec/gm*100)),trab=Object.keys(dt).length,ex;
     if(falta>0.004){
       ex='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px"><b style="color:var(--bad)">Falta '+brl(falta)+'</b><span style="color:var(--mut)">'+pct+'% da meta</span></div>';
       if(meta.dias>0){
-        var rest=Math.max(0,meta.dias-trab);
-        ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">'+(rest>0?'Faltam '+rest+(rest===1?' dia':' dias')+' de trabalho · precisa de '+brl(falta/rest)+' por dia.':'Os '+meta.dias+' dias planejados já foram trabalhados.')+'</div>';
+        var rest=Math.max(0,diasTrab(m)-trab);
+        ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">'+(rest>0?'Faltam '+rest+(rest===1?' dia':' dias')+' de trabalho · precisa de '+brl(falta/rest)+' por dia.':'Os '+diasTrab(m)+' dias planejados já foram trabalhados.')+'</div>';
       }
     }else{
       ex='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px"><b style="color:var(--ok)">✅ Meta batida!</b><span style="color:var(--mut)">'+(falta<-0.004?brl(-falta)+' acima ('+pct+'%)':pct+'%')+'</span></div>';
     }
     ex+=difLinha("Custos diários no mês até hoje",custoMesDif(m));
+    if(ehMesIni(m))ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Contando a partir de '+fmtBR(meta.ini).slice(0,5)+' (data do cadastro da meta), com '+diasTrab(m)+' dias de trabalho neste mês.</div>';
     ex+='<div style="font-size:12px;color:var(--mut);margin-top:4px;line-height:1.4">Sua meta '+brl(mm.base)+' + custos diários '+brl(mm.cd)+' + anuais e reservas '+brl(mm.ar)+' = '+brl(gm)+'.</div><div style="font-size:12px;color:var(--mut);margin-top:2px">Lucro do mês: '+brl(s)+' (receitas − despesas lançadas).</div>';
-    h+=barra("Meta do mês"+(meta.dias>0?" · "+trab+"/"+meta.dias+" dias":""),rec,gm,ex);
+    h+=barra("Meta do mês"+(meta.dias>0?" · "+trab+"/"+diasTrab(m)+" dias":""),rec,gm,ex);
   }
   if(metaDiaD(diaSel).total>0){
     var hd=diaSel,md=metaDiaD(hd),rd=recDia(hd),ld=rd-lancDia(hd),fd=md.total-rd,exh;
@@ -1743,7 +1782,7 @@ function render(){
     '<div class="kv"><span>Horas trabalhadas</span><b>'+(hs>0?hs.toLocaleString("pt-BR")+' h':"-")+'</b></div>'+
     '<div class="kv"><span>Ganho por hora</span><b>'+(hs>0?brl(r/hs):"-")+'</b></div>'+
     '<div class="kv"><span>Lucro por hora</span><b>'+(hs>0?brl(s/hs):"-")+'</b></div>'+
-    '<div class="kv"><span>Corridas</span><b>'+(ncs>0?ncs:"-")+'</b></div><div class="kv"><span>Ganho por corrida</span><b>'+(ncs>0?brl(r/ncs):"-")+'</b></div>'+(function(){var cmd=custoMesDif(m),dx=cmd.has?difKV("Custos diários: previsto − lançado",cmd):'';var mm=metaMesM(m);if(!(mm.total>0))return dx;var f=mm.total-r;return dx+'<div class="kv"><span>Meta do mês</span><b>'+brl(mm.total)+'</b></div><div class="kv"><span>'+(f>0.004?'Falta para a meta':'Meta batida (acima)')+'</span><b class="'+(f>0.004?'bad':'ok')+'">'+brl(Math.abs(f))+'</b></div>'})();
+    '<div class="kv"><span>Corridas</span><b>'+(ncs>0?ncs:"-")+'</b></div><div class="kv"><span>Ganho por corrida</span><b>'+(ncs>0?brl(r/ncs):"-")+'</b></div>'+(function(){var cmd=custoMesDif(m),dx=cmd.has?difKV("Custos diários: previsto − lançado",cmd):'';var mm=metaMesM(m);if(!(mm.total>0))return dx;var f=mm.total-recMesMeta(m);return dx+'<div class="kv"><span>Meta do mês</span><b>'+brl(mm.total)+'</b></div><div class="kv"><span>'+(f>0.004?'Falta para a meta':'Meta batida (acima)')+'</span><b class="'+(f>0.004?'bad':'ok')+'">'+brl(Math.abs(f))+'</b></div>'})();
   metasUI(s,m,r);popFil();renderMan();renderCl();chart(mes);renderServ();fillDL();renderRel();renderIR();renderFuel();renderVenc();renderFat();renderDesp();renderReserva();renderCD();renderGcSum();renderDup();renderImp();renderPd();odoInfo();renderTurno();
   $("reprap").style.display=dados.length?"block":"none";$("reprap").textContent=repTxt();
 }
@@ -1826,7 +1865,7 @@ function fillRep(){
 var editId=null,exArm=false,dupOk=false;
 function abrir(e){
   editId=e?e.id:null;exArm=false;dupOk=false;
-  $("data").value=e?e.data:hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
+  $("data").value=e?e.data:hoje();$("data").max=hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
   $("err").textContent="";$("sv").textContent=e?"Salvar alterações":"Salvar";
   $("ex").style.display=e?"block":"none";$("ex").textContent="Excluir lançamento";
   if(e){cat=e.tipo;setModo(isR(e.tipo)?"r":"d")}else setModo("r");
@@ -1904,6 +1943,7 @@ $("sv").onclick=function(){
   var v=parseFloat($("valor").value);
   if(!(v>0)){$("err").textContent="Digite um valor maior que zero.";return}
   var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",nc=modo==="r"?Math.max(0,parseInt($("ncor").value)||0):0,ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
+  if(d>hoje()){$("err").textContent="A data não pode ser futura. Hoje é "+fmtBR(hoje())+" (data do aparelho).";return}
   if(!editId&&modo==="d"&&!dupOk&&dados.some(function(x){return x.data===d&&x.tipo===cat&&!isR(x.tipo)&&Math.abs(x.valor-v)<0.005})){dupOk=true;$("err").textContent="Já existe um lançamento igual neste dia ("+info(cat)[1]+" "+brl(v)+"). Toque em Salvar de novo se for outro gasto.";return}
   if(editId){
     var e=dados.filter(function(x){return x.id===editId})[0];
@@ -1938,6 +1978,7 @@ $("vcx").onclick=vReset;
 $("vadd").onclick=function(){
   var nome=$("vsel").value==="__outro"?$("vn2").value.trim():$("vsel").value,dt=$("vdata").value;
   if(!nome||!dt){toast("Informe o nome e a data do prazo");return}
+  if(!vedit&&dt<hoje()){toast("Essa data já passou. Hoje é "+fmtBR(hoje())+": informe uma data a partir de hoje.");return}
   var ot=nomeOnde(nome,{venc:vedit});if(ot){toast(nomeAviso(nome,ot));return}
   var av=Math.min(365,Math.max(1,parseInt($("vavisa").value)||30)),it={id:vedit||Date.now(),nome:nome.slice(0,30),data:dt,aviso:av},old=vedit?venc.filter(function(x){return x.id===vedit})[0]:null;
   if($("vcalc").checked){
@@ -2068,11 +2109,21 @@ $("diahoje").onclick=function(){diaSel=hoje();cur=new Date(+diaSel.slice(0,4),+d
 $("pdant").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]-1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);diaSel=pdDia;render()}};
 $("pdprox").onclick=function(){var p=pdDia.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+1);if(iso(d).slice(0,7)===mk()){pdDia=iso(d);diaSel=pdDia;render()}};
 $("impdiv").onchange=function(){meta=Object.assign({},meta,{impdiv:this.value==="trab"?"trab":undefined});saveCats();render();toast("✅ Impostos: "+(this.value==="trab"?"reserva completa":"só o valor do dia"))};
+$("mdiasat").oninput=function(){mAtMan=true;metaUI()};
+$("mprop").onchange=metaUI;
 $("msv").onclick=function(){
-  var d=Math.min(31,Math.max(0,parseInt($("mdias").value)||0));
-  meta={dia:parseFloat($("mdia").value)||0,mes:parseFloat($("mmes").value)||0,dias:d,impdiv:meta.impdiv};
-  if(d>0&&metaMesBase()>0)meta.dia=Math.round(metaMesBase()/d*100)/100;
-  fillMeta();saveCats();render();toast("✅ Metas salvas");
+  var hm=hoje(),hmm=hm.slice(0,7),dm=diasDoMes(hmm),d=parseInt($("mdias").value)||0,mes=parseFloat($("mmes").value)||0,erro="";
+  var ini=(meta.ini&&meta.ini.slice(0,7)===hmm&&meta.mes>0)?meta.ini:hm,dia=+ini.slice(8,10),rs=dm-dia+1,mx=Math.max(1,Math.min(rs,d||rs)),da=parseInt($("mdiasat").value)||0;
+  if(d>dm)erro="Este mês tem "+dm+" dias. Os dias de trabalho por mês não podem passar de "+dm+".";
+  if(!erro&&dia>1&&d>0){
+    if(da<1)da=Math.max(1,Math.min(mx,Math.round(d*rs/dm)));
+    if(da>mx)erro="A meta começa no dia "+dia+": restam "+rs+" dias neste mês"+(d<rs?" e você trabalha "+d+" dias por mês":"")+". Os dias de trabalho deste mês não podem passar de "+mx+".";
+  }
+  if(erro){$("mhint").textContent="⚠️ "+erro;toast(erro);if(dia>1&&d>0&&da>mx){$("mdiasat").value=mx;mAtMan=true}return}
+  meta={dia:parseFloat($("mdia").value)||0,mes:mes,dias:Math.min(31,d),impdiv:meta.impdiv,ini:ini};
+  if(dia>1&&d>0){meta.diasAt=da;if($("mprop").value==="1")meta.prop=1}
+  if(d>0&&mes>0)meta.dia=r2(mes/d);
+  fillMeta();saveCats();render();toast("✅ Metas salvas"+(dia>1&&d>0?" (mês atual com "+da+" dias de trabalho)":""));
 };
 $("mlist").onclick=function(ev){
   var b=ev.target.closest("button");if(!b)return;
@@ -2212,7 +2263,7 @@ $("fim").onchange=function(){
         (l.venc||[]).forEach(function(v){if(v&&v.id&&v.nome&&v.data&&!venc.some(function(y){return y.id===v.id})){var o={id:v.id,nome:String(v.nome).slice(0,30),data:String(v.data).slice(0,10),aviso:+v.aviso||30};if(+v.vt>0&&(+v.per>=1||+v.vd>=1)){o.vt=+v.vt;if(+v.per>=1)o.per=Math.min(36,Math.round(+v.per));else o.vd=Math.round(+v.vd);if(v.emb===false)o.emb=false;o.ini=/^\d{4}-\d{2}-\d{2}$/.test(v.ini)?v.ini:hoje();o.sep={};Object.keys(v.sep||{}).forEach(function(k){if(/^\d{4}-\d{2}$/.test(k))o.sep[k]=1})}if(v.cat==="R")o.cat="R";else o.cat="A";if(v.sv&&typeof v.sv==="object"){o.sv={};Object.keys(v.sv).forEach(function(k){if(/^\d{4}-\d{2}$/.test(k)&&+v.sv[k]>=0)o.sv[k]=+v.sv[k]})}venc=venc.concat([o])}});
         (l.contas||[]).forEach(function(c){if(c&&c.id&&c.nome&&!contas.some(function(y){return String(y.id)===String(c.id)}))contas=contas.concat([contaLimpa(c)])});
         (l.fixos||[]).forEach(function(v){if(v&&v.nome&&+v.valor>0&&!contas.some(function(y){return y.tipo==="F"&&y.nome.toLowerCase()===String(v.nome).toLowerCase()}))contas=contas.concat([contaLimpa({id:"m"+v.id,nome:v.nome,tipo:"F",icone:"💶",vals:[{de:"2000-01",v:+v.valor}]})])});
-        if(l.meta&&!meta.dia&&!meta.mes)meta={dia:+l.meta.dia||0,mes:+l.meta.mes||0,dias:+l.meta.dias||0,impdiv:l.meta.impdiv==="trab"?"trab":undefined};
+        if(l.meta&&!meta.dia&&!meta.mes)meta={dia:+l.meta.dia||0,mes:+l.meta.mes||0,dias:+l.meta.dias||0,impdiv:l.meta.impdiv==="trab"?"trab":undefined,ini:/^\d{4}-\d{2}-\d{2}$/.test(l.meta.ini)?l.meta.ini:undefined,diasAt:+l.meta.diasAt>0?Math.round(+l.meta.diasAt):undefined,prop:l.meta.prop?1:undefined};
         saveCats();cacheServ();fillMeta();
       }
       render();setSync("✅ Backup restaurado");
