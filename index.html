@@ -216,7 +216,7 @@ nav button.on b{font-weight:800}
   <div class="st"><h3>Zerar dados</h3>
     <div style="font-size:13px;color:var(--mut);line-height:1.5">Apaga todos os lançamentos, manutenções (com fotos), metas, categorias e lembretes, deixando o app vazio. Baixe um backup antes.</div>
     <button class="dg" id="zbtn">🗑️ Zerar todos os dados</button></div>
-  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 29/10/2026 · v51</div>
+  <div style="text-align:center;font-size:11px;color:var(--mut);margin:0 0 12px" id="vers">Versão independente · 30/10/2026 · v52</div>
   <div class="st" style="text-align:center"><h3>Apoie o aplicativo 💚</h3>
     <div style="font-size:14px;line-height:1.5">Se gostou do aplicativo e quiser doar qualquer valor, o PIX do idealizador é:</div>
     <div id="pixk" style="font-size:22px;font-weight:800;margin:12px 0 2px;user-select:all;-webkit-user-select:all">71988431359</div>
@@ -357,6 +357,9 @@ nav button.on b{font-weight:800}
     <div id="hWrap"><label>Horas trabalhadas (opcional)</label><input type="number" inputmode="decimal" id="hin" placeholder="0"></div>
     <div id="hiWrap"><label>Início do turno (opcional)</label><input type="time" id="hini"></div>
     <div id="crWrap"><label>Corridas no dia (quantidade)</label><input type="number" inputmode="numeric" min="0" id="ncor" placeholder="0"></div>
+    <div id="hfWrap"><label>Fim do turno (opcional)</label><input type="time" id="hfim"></div>
+    <div id="npWrap"><label>Pausas (quantidade)</label><input type="number" inputmode="numeric" min="0" id="npaus" placeholder="0"></div>
+    <div id="mpWrap"><label>Tempo em pausa (min)</label><input type="number" inputmode="numeric" min="0" id="mpaus" placeholder="0"></div>
   </div>
   <div class="f" id="fuelWrap" style="display:none;margin-top:10px">
     <div><label>Litros abastecidos</label><input type="number" inputmode="decimal" step="0.01" id="flit" placeholder="0"></div>
@@ -665,6 +668,38 @@ function fillCombo(id,lista,atual){
   }else sel.value="";
 }
 function valCombo(id){var v=$(id).value;return v==="__novo"?$(id+"2").value.trim():v}
+function detLanc(e,g){
+  var o="";
+  if(g){
+    var l1=[];if(e.km)l1.push(e.km+" km");if(e.h)l1.push(fmt1(e.h)+" h");
+    var hi=/^\d\d:\d\d$/.test(e.hi||"")?e.hi:"",hf=/^\d\d:\d\d$/.test(e.hf||"")?e.hf:"";
+    if(hi&&hf)l1.push("🕗 "+hi+" → "+hf);else if(hi)l1.push("🕗 início "+hi);else if(hf)l1.push("🕗 fim "+hf);
+    if(l1.length)o+='<small>'+l1.join(" · ")+'</small>';
+    var l2=[];
+    if(e.np>0)l2.push("⏸ "+(e.np|0)+((e.np|0)===1?" pausa":" pausas")+(e.mp>0?" ("+fmtDur(e.mp*60000)+")":""));else if(hf&&e.np===0)l2.push("⏸ sem pausas");
+    if(e.nc>0)l2.push("🚕 "+(e.nc|0)+((e.nc|0)===1?" corrida":" corridas"));
+    if(l2.length)o+='<small>'+l2.join(" · ")+'</small>';
+    var l3=[];if(e.h>0)l3.push(brl(e.valor/e.h)+"/h");if(e.km>0)l3.push(brl(e.valor/e.km)+"/km");if(e.nc>0)l3.push(brl(e.valor/e.nc)+"/corrida");
+    if(l3.length)o+='<small>💵 '+l3.join(" · ")+'</small>';
+  }else{
+    if(e.ob)o+='<small>📝 '+esc(String(e.ob).slice(0,120))+'</small>';
+    if(e.l)o+='<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(e.valor>0?' · '+brl(e.valor/e.l)+'/L':'')+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>';
+    if(e.o>0)o+='<small>📟 Odômetro '+(e.o|0).toLocaleString("pt-BR")+' km</small>';
+  }
+  return o;
+}
+function turnoKV(d){
+  var tr=dados.filter(function(e){return e.data===d&&isR(e.tipo)}),hi="",hf="",np=0,mp=0,tem=false;
+  tr.forEach(function(e){
+    if(/^\d\d:\d\d$/.test(e.hi||"")&&(!hi||e.hi<hi))hi=e.hi;
+    if(/^\d\d:\d\d$/.test(e.hf||"")&&(!hf||e.hf>hf))hf=e.hf;
+    if(e.np>0){np+=e.np|0;tem=true}if(e.mp>0)mp+=e.mp|0;
+  });
+  var o="";
+  if(hi||hf)o+=kv("Turno (início → fim)",(hi||"?")+" → "+(hf||"?"));
+  if(tem)o+=kv("Pausas",np+(np===1?" pausa":" pausas")+(mp>0?" ("+fmtDur(mp*60000)+")":""));
+  return o;
+}
 function renderServ(){
   var tot=0,h="";
   servs.sort(function(a,b){return String(b.data).localeCompare(String(a.data))||b.id-a.id});
@@ -925,8 +960,8 @@ function encerrar(){
   turnos=[{id:ag,ini:t.ini,fim:ag,mt:mt,mp:mp}].concat(turnos).slice(0,30);
   saveCats();renderTurno();
   var hh=Math.round(mt/3600000*100)/100;
-  abrir();setModo("r");$("hin").value=hh;$("hini").value=hhmm(t.ini);$("data").value=iso(new Date(t.ini));
-  toast("⏹ Início às "+hhmm(t.ini)+" · "+fmtDur(mt)+" trabalhadas"+(mp>0?" (pausas: "+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Informe a receita e a quantidade de corridas do turno.");
+  abrir();setModo("r");$("hin").value=hh;$("hini").value=hhmm(t.ini);$("hfim").value=hhmm(ag);$("npaus").value=t.pausas.length;$("mpaus").value=Math.round(mp/60000);$("data").value=iso(new Date(t.ini));
+  toast("⏹ "+hhmm(t.ini)+" → "+hhmm(ag)+" · "+fmtDur(mt)+" trabalhadas · "+t.pausas.length+(t.pausas.length===1?" pausa":" pausas")+(mp>0?" ("+fmtDur(mp)+")":"")+(mt>16*3600000?". Confira, o turno ficou muito longo":"")+". Informe a receita e a quantidade de corridas do turno.");
 }
 function defaultContas(){return [
   {id:"f1",nome:"Aluguel",tipo:"F",icone:"🏠"},{id:"f2",nome:"Financiamento do veículo",tipo:"F",icone:"🚗"},
@@ -1269,7 +1304,7 @@ function renderPd(){
   var x=arr[iSel],p=pdDia.split("-");
   $("pddt").textContent=SEM[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+", "+p[2]+"/"+p[1]+"/"+p[0];
   $("pdant").disabled=iSel<=0;$("pdprox").disabled=iSel>=arr.length-1;$("pdant").style.opacity=iSel<=0?.35:1;$("pdprox").style.opacity=iSel>=arr.length-1?.35:1;
-  var k=kv("Receitas",brl(x.r),"ok")+kv("Despesas",brl(x.s),"bad")+kv("Lucro do dia",brl(x.l),x.l>=0?"ok":"bad")+kv("Km rodados",x.k.toLocaleString("pt-BR")+" km")+kv("Horas trabalhadas",x.h>0?x.h.toLocaleString("pt-BR")+" h":"-")+kv("Lucro por km",x.k>0?brl(x.l/x.k):"-")+kv("Ganho por hora",x.h>0?brl(x.r/x.h):"-")+kv("Corridas",x.c>0?String(x.c):"-")+kv("Ganho por corrida",x.c>0?brl(x.r/x.c):"-")+kv("Lucro por corrida",x.c>0?brl(x.l/x.c):"-");
+  var k=kv("Receitas",brl(x.r),"ok")+kv("Despesas",brl(x.s),"bad")+kv("Lucro do dia",brl(x.l),x.l>=0?"ok":"bad")+kv("Km rodados",x.k.toLocaleString("pt-BR")+" km")+kv("Horas trabalhadas",x.h>0?x.h.toLocaleString("pt-BR")+" h":"-")+turnoKV(pdDia)+kv("Lucro por km",x.k>0?brl(x.l/x.k):"-")+kv("Ganho por hora",x.h>0?brl(x.r/x.h):"-")+kv("Corridas",x.c>0?String(x.c):"-")+kv("Ganho por corrida",x.c>0?brl(x.r/x.c):"-")+kv("Lucro por corrida",x.c>0?brl(x.l/x.c):"-");
   var cdd=custoDiaDet(pdDia);if(cdd.has)k+=kv("Custos: previsto × lançado",brl(cdd.vp)+" × "+brl(cdd.vl))+difKV("Diferença nos custos",cdd);
   var md=metaDiaD(pdDia);if(md.total>0)k+=kv("Sua meta (base)",brl(md.base))+kv("+ Custos do dia",brl(md.cd))+kv("+ Anuais e reservas",brl(md.ar))+kv("= Meta do dia",brl(md.total),"ok")+(x.r>=md.total-0.004?kv("Receitas vs meta","✅ Meta batida (+ "+brl(x.r-md.total)+")","ok"):kv("Falta para a meta",brl(md.total-x.r),"bad"));
   $("pdkpi").innerHTML=k;
@@ -1827,7 +1862,7 @@ function render(){
     if(e.sint){h+='<div class="it" data-sg="'+e.o+'" data-sid="'+(e.sid||"")+'"><div class="ic" style="background:rgba(229,72,77,.15)">'+e.ic+'</div><div class="t">'+esc(e.n)+'<small>✅ Pago · '+(e.o==="mensal"?"Custos mensais":e.o==="manut"?"Manutenção":"Despesas (casa)")+'</small></div><b class="bad">-'+brl(e.v)+'</b></div>';return}
     var i=info(e.tipo),g=isR(e.tipo);
     h+='<div class="it" data-id="'+e.id+'">'+(e.tipo==="uber"||e.tipo==="99"||e.tipo==="indrive"?em(e.tipo):'<div class="ic" style="background:'+(g?'rgba(0,168,107,.15)':'rgba(229,72,77,.15)')+'">'+i[2]+'</div>')+
-       '<div class="t">'+esc(i[1])+(e.km?'<small>'+e.km+' km</small>':'')+(/^\d\d:\d\d$/.test(e.hi||"")?'<small>🕗 início '+e.hi+'</small>':'')+(g&&e.nc>0?'<small>🚕 '+(e.nc|0)+((e.nc|0)===1?' corrida':' corridas')+'</small>':'')+(e.ob&&!g?'<small>📝 '+esc(String(e.ob).slice(0,120))+'</small>':'')+(e.l?'<small>⛽ '+e.l.toLocaleString("pt-BR")+' L'+(fuelInfo[e.id]?' · '+fmt1(fuelInfo[e.id].kml)+' km/L':'')+'</small>':'')+'</div>'+
+       '<div class="t">'+esc(i[1])+detLanc(e,g)+'</div>'+
        '<b class="'+(g?'ok':'bad')+'">'+(g?'':'-')+brl(e.valor)+'</b></div>';
   });
   $("lista").innerHTML=(h?'<div class="hint">Toque em um lançamento para editar ou excluir. Contas pagas e manutenção abrem o módulo de origem.</div>'+h:'')||'<div class="vazio">Nenhum lançamento neste mês.<br>Toque no + para começar.</div>';
@@ -1864,7 +1899,7 @@ function chips(){
   h+='<option value="__nova">➕ Nova categoria…</option></select>';
   $("chips").innerHTML=h;updDel();
 }
-function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=$("hiWrap").style.display=$("crWrap").style.display=m==="r"?"":"none";$("obsWrap").style.display=m==="d"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
+function setModo(m){modo=m;$("kmWrap").style.display=$("hWrap").style.display=$("hiWrap").style.display=$("crWrap").style.display=$("hfWrap").style.display=$("npWrap").style.display=$("mpWrap").style.display=m==="r"?"":"none";$("obsWrap").style.display=m==="d"?"":"none";$("dtWrap").style.gridColumn="1 / -1";$("tr").className=m==="r"?"on r":"";$("td").className=m==="d"?"on d":"d";chips()}
 var d4={k:null,n:null,arm:false};
 function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none"},2600)}
 function refreshUI(){
@@ -1921,13 +1956,13 @@ function repTxt(){var u=ultimo();return u?"🔁 Repetir último: "+info(u.tipo)[
 function fillRep(){
   var u=ultimo();if(!u)return;
   cat=u.tipo;setModo(isR(u.tipo)?"r":"d");
-  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("ncor").value="";$("obs").value="";$("flit").value=u.l||"";$("fodo").value="";
+  $("valor").value=u.valor;$("kmin").value=u.km||"";$("hin").value=u.h||"";$("hini").value="";$("ncor").value="";$("hfim").value="";$("npaus").value="";$("mpaus").value="";$("obs").value="";$("flit").value=u.l||"";$("fodo").value="";
   $("err").textContent="";toast("🔁 Último lançamento copiado. Ajuste o que precisar e salve.");
 }
 var editId=null,exArm=false,dupOk=false;
 function abrir(e){
   editId=e?e.id:null;exArm=false;dupOk=false;
-  $("data").value=e?e.data:hoje();$("data").max=hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
+  $("data").value=e?e.data:hoje();$("data").max=hoje();$("valor").value=e?e.valor:"";$("kmin").value=e&&e.km?e.km:"";$("hin").value=e&&e.h?e.h:"";$("hini").value=e&&e.hi?e.hi:"";$("ncor").value=e&&e.nc>0?(e.nc|0):"";$("hfim").value=e&&e.hf?e.hf:"";$("npaus").value=e&&e.np>0?(e.np|0):(e&&e.hf&&e.np===0?0:"");$("mpaus").value=e&&e.mp>0?(e.mp|0):"";$("flit").value=e&&e.l?e.l:"";$("fodo").value=e&&e.o?e.o:"";$("obs").value=e&&e.ob?String(e.ob).slice(0,120):"";
   $("err").textContent="";$("sv").textContent=e?"Salvar alterações":"Salvar";
   $("ex").style.display=e?"block":"none";$("ex").textContent="Excluir lançamento";
   if(e){cat=e.tipo;setModo(isR(e.tipo)?"r":"d")}else setModo("r");
@@ -2004,14 +2039,14 @@ $("chips").onclick=function(e){
 $("sv").onclick=function(){
   var v=parseFloat($("valor").value);
   if(!(v>0)){$("err").textContent="Digite um valor maior que zero.";return}
-  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",nc=modo==="r"?Math.max(0,parseInt($("ncor").value)||0):0,ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
+  var d=$("data").value||hoje(),km=modo==="r"?(parseFloat($("kmin").value)||0):0,h=modo==="r"?(parseFloat($("hin").value)||0):0,hi=modo==="r"?$("hini").value:"",nc=modo==="r"?Math.max(0,parseInt($("ncor").value)||0):0,hf=modo==="r"?$("hfim").value:"",np=modo==="r"?Math.max(0,parseInt($("npaus").value)||0):0,mp=modo==="r"?Math.max(0,parseInt($("mpaus").value)||0):0,ob=modo==="d"?$("obs").value.trim().slice(0,120):"",fc=modo==="d"&&cat==="Abastecimento",lit=fc?(parseFloat($("flit").value)||0):0,od=fc?(parseInt($("fodo").value)||0):0,ms=[d.slice(0,7)];
   if(d>hoje()){$("err").textContent="A data não pode ser futura. Hoje é "+fmtBR(hoje())+" (data do aparelho).";return}
   var dd1=dados.some(function(x){return x.data===d&&x.tipo===cat&&!isR(x.tipo)&&Math.abs(x.valor-v)<0.005}),dd2=servs.some(function(x){return x.data===d&&Math.abs((x.valor||0)-v)<0.005});
   if(!editId&&modo==="d"&&!dupOk&&(dd1||dd2)){dupOk=true;$("err").textContent=dd1?"Já existe um lançamento igual neste dia ("+info(cat)[1]+" "+brl(v)+"). Toque em Salvar de novo se for outro gasto.":"Já existe uma manutenção de "+brl(v)+" neste dia, e ela já conta nas despesas. Toque em Salvar de novo se for outro gasto.";return}
   if(editId){
     var e=dados.filter(function(x){return x.id===editId})[0];
-    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.nc=nc;e.l=lit;e.o=od;if(modo==="d")e.ob=ob;e.data=d}
-  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,hi:hi,nc:nc,l:lit,o:od,ob:ob,data:d});
+    if(e){ms.push(e.data.slice(0,7));e.tipo=cat;e.valor=v;e.km=km;e.h=h;e.hi=hi;e.hf=hf;e.np=np;e.mp=mp;e.nc=nc;e.l=lit;e.o=od;if(modo==="d")e.ob=ob;e.data=d}
+  }else dados.push({id:Date.now(),tipo:cat,valor:v,km:km,h:h,hi:hi,hf:hf,np:np,mp:mp,nc:nc,l:lit,o:od,ob:ob,data:d});
   save(Array.from(new Set(ms)));
   if(fc&&od>0&&od>(odoAtual()||0)){perfil.odo=od;perfil.odoTs=Date.now();saveCats();fillPerfil()}
   var p=d.split("-");cur=new Date(+p[0],+p[1]-1,1);fechar();render();
